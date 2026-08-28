@@ -93,10 +93,17 @@
 
     emptyEl.classList.toggle("is-hidden", habits.length > 0);
 
-    var doneCount = habits.filter(function (h) {
-      return h.checkedDates.indexOf(today) !== -1;
-    }).length;
-    summaryEl.textContent = "오늘 완료 " + doneCount + " / " + habits.length;
+    if (habits.length === 0) {
+      summaryEl.textContent = "";
+    } else {
+      var best = 0;
+      habits.forEach(function (h) {
+        var d = daysBetween(h.streakStartDate, today);
+        if (d > best) best = d;
+      });
+      summaryEl.textContent =
+        "진행 중 " + habits.length + "개 · 최고 연속 " + best + "일";
+    }
   }
 
   function buildCard(habit, today) {
@@ -105,10 +112,9 @@
     var remaining = habit.goalDays - elapsed; // D-remaining
     var achieved = remaining <= 0;
     var percent = Math.min(100, Math.round((elapsed / habit.goalDays) * 100));
-    var isDone = habit.checkedDates.indexOf(today) !== -1;
 
     var card = document.createElement("div");
-    card.className = "habit" + (isDone ? " habit--done" : "");
+    card.className = "habit";
 
     /* 헤더 */
     var head = document.createElement("div");
@@ -186,14 +192,6 @@
     var buttons = document.createElement("div");
     buttons.className = "habit__buttons";
 
-    var checkBtn = document.createElement("button");
-    checkBtn.type = "button";
-    checkBtn.className = "btn btn--check" + (isDone ? " is-active" : "");
-    checkBtn.textContent = isDone ? "✅ 오늘 완료됨" : "오늘 완료";
-    checkBtn.addEventListener("click", function () {
-      toggleToday(habit.id);
-    });
-
     var resistBtn = document.createElement("button");
     resistBtn.type = "button";
     resistBtn.className = "btn btn--resist";
@@ -219,7 +217,6 @@
       }
     });
 
-    buttons.appendChild(checkBtn);
     buttons.appendChild(resistBtn);
     buttons.appendChild(violateBtn);
 
@@ -485,7 +482,6 @@
       violationCount: 0,
       resistCount: 0,
       resistDate: todayKey(),
-      checkedDates: [],
       createdAt: todayKey()
     });
     saveHabits(habits);
@@ -516,20 +512,6 @@
 
     habit.name = newName;
     habit.goalDays = newGoal;
-    saveHabits(habits);
-    render();
-  }
-
-  function toggleToday(id) {
-    var habit = findHabit(id);
-    if (!habit) return;
-    var today = todayKey();
-    var idx = habit.checkedDates.indexOf(today);
-    if (idx === -1) {
-      habit.checkedDates.push(today);
-    } else {
-      habit.checkedDates.splice(idx, 1);
-    }
     saveHabits(habits);
     render();
   }

@@ -141,10 +141,6 @@ body {
   padding: 16px;
 }
 
-.habit--done {
-  border-color: var(--success);
-}
-
 .habit__head {
   display: flex;
   align-items: flex-start;
@@ -245,28 +241,14 @@ body {
   cursor: pointer;
 }
 
-.btn--check {
-  color: var(--success);
-  border-color: var(--success);
-}
-
-.btn--check.is-active {
-  background: var(--success);
-  color: #fff;
-}
-
 .btn--resist {
   color: var(--accent);
   border-color: var(--accent);
-  flex: 0 0 auto;
-  padding: 10px 14px;
 }
 
 .btn--violate {
   color: var(--warn);
   border-color: var(--warn);
-  flex: 0 0 auto;
-  padding: 10px 14px;
 }
 
 /* 마우스가 있는 기기에서만 hover 색을 준다 (터치하면 색이 눌러붙는 문제 방지) */
