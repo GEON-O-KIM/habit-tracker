@@ -247,31 +247,62 @@
     return card;
   }
 
-  // 참음 횟수를 벽돌 탑으로 그린다. 한 칸에 8개씩 쌓고, 넘치면 오른쪽으로 새 칸.
+  // 참음 횟수만큼 한 층씩 쌓이는 탑을 그린다.
   function buildResistTower(count, animateLast) {
-    var tower = document.createElement("div");
-    tower.className = "resist-tower";
+    var wrap = document.createElement("div");
+    wrap.className = "tower";
+    if (count <= 0) return wrap; // 비어 있으면 CSS :empty 로 숨김
 
-    var PER_COL = 8;
-    var MAX_BRICKS = 240; // 너무 많으면 화면 보호용으로 제한
-    var shown = Math.min(count, MAX_BRICKS);
-    var placed = 0;
+    var MAX_FLOORS = 40; // 이 이상은 높이를 고정하고 "+N" 으로 표시
+    var floors = Math.min(count, MAX_FLOORS);
+    var hidden = count - floors;
 
-    while (placed < shown) {
-      var col = document.createElement("div");
-      col.className = "resist-tower__col";
-      var inCol = Math.min(PER_COL, shown - placed);
-      for (var i = 0; i < inCol; i++) {
-        placed++;
-        var brick = document.createElement("span");
-        brick.className = "brick";
-        if (animateLast && placed === shown) brick.classList.add("brick--new");
-        col.appendChild(brick);
-      }
-      tower.appendChild(col);
+    var MAX_H = 140;
+    var GAP = 1;
+    var floorH = Math.max(2.5, Math.min(9, (MAX_H - (floors - 1) * GAP) / floors));
+
+    var stack = document.createElement("div");
+    stack.className = "tower__stack";
+    if (animateLast) stack.classList.add("tower__stack--settle");
+    stack.style.gap = GAP + "px";
+
+    // 꼭대기 지붕 (한 층이라도 있으면 항상 표시)
+    var topW = 62 - ((floors - 1) / floors) * 18;
+    var roof = document.createElement("span");
+    roof.className = "tower__roof";
+    roof.style.borderLeftWidth = topW / 2 + "px";
+    roof.style.borderRightWidth = topW / 2 + "px";
+    stack.appendChild(roof);
+
+    // 층: 위에서 아래로 (i = 맨 위층 → 1층)
+    for (var i = floors - 1; i >= 0; i--) {
+      var floor = document.createElement("span");
+      floor.className = "tower__floor";
+      var w = 62 - (i / floors) * 18; // 위로 갈수록 좁아짐
+      floor.style.width = w.toFixed(1) + "px";
+      floor.style.height = floorH.toFixed(1) + "px";
+      floor.style.marginLeft = (i % 2 ? 0.8 : -0.8) + "px"; // 손으로 쌓은 듯한 흔들림
+      floor.style.filter = "brightness(" + (0.86 + 0.14 * (i / floors)).toFixed(2) + ")";
+      if ((i + 1) % 10 === 0) floor.classList.add("tower__floor--gold"); // 10층마다 금색
+      if (animateLast && i === floors - 1) floor.classList.add("tower__floor--new");
+      stack.appendChild(floor);
     }
 
-    return tower;
+    // 바닥 받침
+    var base = document.createElement("span");
+    base.className = "tower__base";
+    stack.appendChild(base);
+
+    wrap.appendChild(stack);
+
+    if (hidden > 0) {
+      var more = document.createElement("span");
+      more.className = "tower__more";
+      more.textContent = "+" + hidden + "층";
+      wrap.appendChild(more);
+    }
+
+    return wrap;
   }
 
   /* ---------- 액션 ---------- */

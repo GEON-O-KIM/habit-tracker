@@ -15,6 +15,7 @@
   --success: #2fb37a;
   --warn: #e5794b;
   --warn-soft: #fdeee7;
+  --marker: #f6c945;
   --radius: 14px;
 }
 
@@ -334,51 +335,119 @@ body {
   color: var(--text);
 }
 
-/* 참음 벽돌 탑 */
-.resist-tower {
+/* 참음 탑 */
+.tower {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3px;
-  margin-top: 10px;
-  min-height: 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 12px; /* 안테나 자리 */
 }
 
-.resist-tower:empty {
+.tower:empty {
   display: none;
 }
 
-.resist-tower__col {
+.tower__stack {
   display: flex;
-  flex-direction: column-reverse;
-  gap: 3px;
+  flex-direction: column;
+  align-items: center;
 }
 
-.brick {
-  width: 16px;
+.tower__stack--settle {
+  animation: tower-settle 0.5s ease;
+  transform-origin: bottom center;
+}
+
+@keyframes tower-settle {
+  0% { transform: rotate(0.9deg); }
+  50% { transform: rotate(-0.6deg); }
+  100% { transform: rotate(0); }
+}
+
+.tower__roof {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-color: transparent;
+  border-top-width: 0;
+  border-bottom: 9px solid var(--accent);
+  position: relative;
+  margin-bottom: 1px;
+  filter: brightness(0.82);
+}
+
+.tower__roof::before {
+  /* 안테나 */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  width: 2px;
   height: 9px;
-  border-radius: 2px;
   background: var(--accent);
-  opacity: 0.85;
+  transform: translateX(-50%);
 }
 
-.brick--new {
-  animation: brick-drop 0.32s ease;
+.tower__roof::after {
+  /* 꼭대기 등 */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -13px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--marker, #f6c945);
+  transform: translateX(-50%);
 }
 
-@keyframes brick-drop {
+.tower__floor {
+  border-radius: 1.5px;
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
+.tower__floor--gold {
+  background: var(--marker, #f6c945);
+}
+
+.tower__floor--new {
+  animation: floor-rise 0.36s cubic-bezier(0.34, 1.42, 0.64, 1);
+  transform-origin: bottom center;
+}
+
+@keyframes floor-rise {
   0% {
-    transform: translateY(-9px);
     opacity: 0;
+    transform: translateY(-10px) scaleX(0.5);
   }
   100% {
-    transform: translateY(0);
-    opacity: 0.85;
+    opacity: 1;
+    transform: none;
   }
+}
+
+.tower__base {
+  width: 72px;
+  height: 5px;
+  border-radius: 2px;
+  background: var(--muted);
+  opacity: 0.4;
+  margin-top: 2px;
+}
+
+.tower__more {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brick--new,
+  .tower__floor--new,
+  .tower__stack--settle,
   .resist-box__num.is-bumped {
     animation: none;
   }
