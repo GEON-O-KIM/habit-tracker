@@ -335,121 +335,147 @@ body {
   color: var(--text);
 }
 
-/* 참음 탑 */
-.tower {
+/* 참음 SD 캐릭터 */
+.sd {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-top: 12px;
-  padding-top: 12px; /* 안테나 자리 */
+  gap: 3px;
 }
 
-.tower:empty {
-  display: none;
-}
-
-.tower__stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.tower__stack--settle {
-  animation: tower-settle 0.5s ease;
-  transform-origin: bottom center;
-}
-
-@keyframes tower-settle {
-  0% { transform: rotate(0.9deg); }
-  50% { transform: rotate(-0.6deg); }
-  100% { transform: rotate(0); }
-}
-
-.tower__roof {
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-color: transparent;
-  border-top-width: 0;
-  border-bottom: 9px solid var(--accent);
+.sd__stage {
   position: relative;
-  margin-bottom: 1px;
-  filter: brightness(0.82);
+  width: 128px;
+  height: 128px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.tower__roof::before {
-  /* 안테나 */
-  content: "";
+.sd__canvas {
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  position: relative;
+  z-index: 1;
+}
+
+.sd__shadow {
   position: absolute;
-  left: 50%;
-  top: -9px;
-  width: 2px;
+  bottom: 8px;
+  width: 54px;
   height: 9px;
-  background: var(--accent);
-  transform: translateX(-50%);
-}
-
-.tower__roof::after {
-  /* 꼭대기 등 */
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -13px;
-  width: 4px;
-  height: 4px;
+  background: rgba(31, 36, 48, 0.16);
   border-radius: 50%;
-  background: var(--marker, #f6c945);
-  transform: translateX(-50%);
+  filter: blur(1px);
 }
 
-.tower__floor {
-  border-radius: 1.5px;
-  background: var(--accent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+.sd__stage--bob .sd__canvas {
+  animation: sd-bob 0.5s ease;
 }
 
-.tower__floor--gold {
-  background: var(--marker, #f6c945);
+@keyframes sd-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
 }
 
-.tower__floor--new {
-  animation: floor-rise 0.36s cubic-bezier(0.34, 1.42, 0.64, 1);
-  transform-origin: bottom center;
+.sd__stage--levelup .sd__canvas {
+  animation: sd-jump 0.6s cubic-bezier(0.3, 1.4, 0.6, 1);
 }
 
-@keyframes floor-rise {
+@keyframes sd-jump {
   0% {
-    opacity: 0;
-    transform: translateY(-10px) scaleX(0.5);
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-16px) scale(1.06);
+  }
+  70% {
+    transform: translateY(0) scale(0.96);
   }
   100% {
-    opacity: 1;
-    transform: none;
+    transform: translateY(0) scale(1);
   }
 }
 
-.tower__base {
-  width: 72px;
-  height: 5px;
-  border-radius: 2px;
-  background: var(--muted);
-  opacity: 0.4;
-  margin-top: 2px;
+.sd__spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--marker);
+  border-radius: 1px;
+  transform: rotate(45deg);
+  opacity: 0;
+  animation: sd-spark 0.7s ease forwards;
+  z-index: 2;
 }
 
-.tower__more {
+.sd__spark--0 {
+  top: 16px;
+  left: 30px;
+  animation-delay: 0.02s;
+}
+.sd__spark--1 {
+  top: 26px;
+  right: 26px;
+  animation-delay: 0.1s;
+}
+.sd__spark--2 {
+  top: 54px;
+  left: 20px;
+  animation-delay: 0.16s;
+}
+.sd__spark--3 {
+  top: 44px;
+  right: 18px;
+  animation-delay: 0.22s;
+}
+.sd__spark--4 {
+  top: 8px;
+  left: calc(50% - 3px);
+  animation-delay: 0.06s;
+}
+
+@keyframes sd-spark {
+  0% {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.2);
+  }
+  40% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.4) translateY(-8px);
+  }
+}
+
+.sd__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.sd__hint {
   font-size: 11px;
-  font-weight: 600;
   color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tower__floor--new,
-  .tower__stack--settle,
+  .sd__canvas,
   .resist-box__num.is-bumped {
     animation: none;
+  }
+  .sd__spark {
+    display: none;
   }
 }
 

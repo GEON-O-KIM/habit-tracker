@@ -228,7 +228,7 @@
 
     resistBox.appendChild(resistTop);
     resistBox.appendChild(
-      buildResistTower(habit.resistCount, habit.id === justResistedId)
+      buildResistCharacter(habit.resistCount, habit.id === justResistedId)
     );
 
     /* 어김 (작게) */
@@ -247,62 +247,202 @@
     return card;
   }
 
-  // 참음 횟수만큼 한 층씩 쌓이는 탑을 그린다.
-  function buildResistTower(count, animateLast) {
+  /* ---------- 참음 SD 캐릭터 ---------- */
+
+  // 참음 횟수가 이 값에 도달할 때마다 새 옷으로 업그레이드
+  var RESIST_TIERS = [1, 5, 10, 20, 35, 50];
+  var RESIST_TIER_NAMES = [
+    "맨몸으로 시작",
+    "티셔츠를 입었다",
+    "셔츠와 바지",
+    "멋진 재킷",
+    "정장과 중절모",
+    "망토 두른 기사",
+    "왕관 쓴 영웅"
+  ];
+
+  function outfitTier(count) {
+    var t = 0;
+    for (var i = 0; i < RESIST_TIERS.length; i++) {
+      if (count >= RESIST_TIERS[i]) t = i + 1;
+    }
+    return t;
+  }
+
+  function nextTierAt(count) {
+    for (var i = 0; i < RESIST_TIERS.length; i++) {
+      if (count < RESIST_TIERS[i]) return RESIST_TIERS[i];
+    }
+    return null;
+  }
+
+  function buildResistCharacter(count, animateLast) {
     var wrap = document.createElement("div");
-    wrap.className = "tower";
-    if (count <= 0) return wrap; // 비어 있으면 CSS :empty 로 숨김
+    wrap.className = "sd";
 
-    var MAX_FLOORS = 40; // 이 이상은 높이를 고정하고 "+N" 으로 표시
-    var floors = Math.min(count, MAX_FLOORS);
-    var hidden = count - floors;
+    var tier = outfitTier(count);
+    var leveledUp = animateLast && count > 0 && tier !== outfitTier(count - 1);
 
-    var MAX_H = 140;
-    var GAP = 1;
-    var floorH = Math.max(2.5, Math.min(9, (MAX_H - (floors - 1) * GAP) / floors));
-
-    var stack = document.createElement("div");
-    stack.className = "tower__stack";
-    if (animateLast) stack.classList.add("tower__stack--settle");
-    stack.style.gap = GAP + "px";
-
-    // 꼭대기 지붕 (한 층이라도 있으면 항상 표시)
-    var topW = 62 - ((floors - 1) / floors) * 18;
-    var roof = document.createElement("span");
-    roof.className = "tower__roof";
-    roof.style.borderLeftWidth = topW / 2 + "px";
-    roof.style.borderRightWidth = topW / 2 + "px";
-    stack.appendChild(roof);
-
-    // 층: 위에서 아래로 (i = 맨 위층 → 1층)
-    for (var i = floors - 1; i >= 0; i--) {
-      var floor = document.createElement("span");
-      floor.className = "tower__floor";
-      var w = 62 - (i / floors) * 18; // 위로 갈수록 좁아짐
-      floor.style.width = w.toFixed(1) + "px";
-      floor.style.height = floorH.toFixed(1) + "px";
-      floor.style.marginLeft = (i % 2 ? 0.8 : -0.8) + "px"; // 손으로 쌓은 듯한 흔들림
-      floor.style.filter = "brightness(" + (0.86 + 0.14 * (i / floors)).toFixed(2) + ")";
-      if ((i + 1) % 10 === 0) floor.classList.add("tower__floor--gold"); // 10층마다 금색
-      if (animateLast && i === floors - 1) floor.classList.add("tower__floor--new");
-      stack.appendChild(floor);
+    var stage = document.createElement("div");
+    stage.className = "sd__stage";
+    if (animateLast) {
+      stage.classList.add(leveledUp ? "sd__stage--levelup" : "sd__stage--bob");
     }
 
-    // 바닥 받침
-    var base = document.createElement("span");
-    base.className = "tower__base";
-    stack.appendChild(base);
+    var shadow = document.createElement("div");
+    shadow.className = "sd__shadow";
+    stage.appendChild(shadow);
 
-    wrap.appendChild(stack);
+    var GRID = 32;
+    var S = 8;
+    var canvas = document.createElement("canvas");
+    canvas.className = "sd__canvas";
+    canvas.width = GRID * S;
+    canvas.height = GRID * S;
+    var ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    drawCharacter(ctx, tier, S);
+    stage.appendChild(canvas);
 
-    if (hidden > 0) {
-      var more = document.createElement("span");
-      more.className = "tower__more";
-      more.textContent = "+" + hidden + "층";
-      wrap.appendChild(more);
+    if (leveledUp) {
+      for (var i = 0; i < 5; i++) {
+        var sp = document.createElement("span");
+        sp.className = "sd__spark sd__spark--" + i;
+        stage.appendChild(sp);
+      }
     }
+
+    wrap.appendChild(stage);
+
+    var label = document.createElement("div");
+    label.className = "sd__label";
+    label.textContent = RESIST_TIER_NAMES[tier];
+    wrap.appendChild(label);
+
+    var next = nextTierAt(count);
+    var hint = document.createElement("div");
+    hint.className = "sd__hint";
+    hint.textContent = next ? "다음 옷까지 " + (next - count) + "번" : "최고 등급 달성!";
+    wrap.appendChild(hint);
 
     return wrap;
+  }
+
+  // 32x32 격자에 도트 캐릭터를 그린다. tier 가 올라갈수록 옷이 좋아진다.
+  function drawCharacter(ctx, tier, S) {
+    function p(x, y, w, h, c) {
+      ctx.fillStyle = c;
+      ctx.fillRect(x * S, y * S, w * S, h * S);
+    }
+
+    var SKIN = "#f6cfa6";
+    var SKIN_D = "#e2b18c";
+    var OL = "#2c2622"; // 외곽선
+
+    // 망토 (맨 뒤)
+    if (tier >= 5) {
+      p(7, 15, 18, 14, "#5e1822");
+      p(8, 16, 16, 12, "#a8323f");
+      p(9, 17, 14, 10, "#c2434f");
+      p(13, 15, 6, 2, "#f6c945"); // 어깨 잠금장식
+    }
+
+    // ---- 실루엣(외곽선) ----
+    p(8, 3, 16, 14, OL); // 머리
+    p(10, 15, 12, 10, OL); // 몸통
+    p(8, 16, 3, 9, OL); // 왼팔
+    p(21, 16, 3, 9, OL); // 오른팔
+    p(12, 23, 4, 7, OL); // 왼다리
+    p(16, 23, 4, 7, OL); // 오른다리
+
+    // ---- 맨살 채우기 ----
+    p(9, 4, 14, 11, SKIN); // 얼굴
+    p(13, 15, 6, 1, SKIN_D); // 목
+    p(11, 16, 10, 8, SKIN); // 몸통
+    p(9, 17, 2, 6, SKIN); // 왼팔
+    p(22, 17, 2, 6, SKIN); // 오른팔
+    p(13, 24, 2, 4, SKIN); // 왼다리
+    p(18, 24, 2, 4, SKIN); // 오른다리
+    p(8, 10, 1, 3, SKIN_D); // 왼귀
+    p(23, 10, 1, 3, SKIN_D); // 오른귀
+
+    // ---- 하의 ----
+    if (tier >= 2) {
+      var pants = tier >= 4 ? "#23252e" : "#3b4b66";
+      p(12, 23, 3, 5, pants);
+      p(17, 23, 3, 5, pants);
+    }
+    // 신발
+    var shoe = tier >= 3 ? "#1c1f26" : "#6a5f52";
+    p(12, 28, 4, 2, shoe);
+    p(16, 28, 4, 2, shoe);
+
+    // ---- 상의 ----
+    if (tier === 0) {
+      p(12, 21, 8, 3, "#e2e6ef"); // 속옷
+    } else if (tier === 1) {
+      p(11, 16, 10, 6, "#4f7cff"); // 티셔츠
+      p(9, 16, 2, 3, "#4f7cff"); // 짧은 소매
+      p(22, 16, 2, 3, "#4f7cff");
+      p(11, 21, 10, 1, "#3b63d6"); // 밑단
+    } else if (tier === 2) {
+      p(11, 16, 10, 8, "#eef1f7"); // 셔츠
+      p(9, 16, 2, 6, "#eef1f7");
+      p(22, 16, 2, 6, "#e3e7f0");
+      p(15, 16, 1, 8, "#c7cede"); // 단추선
+    } else if (tier === 3) {
+      p(11, 16, 10, 8, "#e7eaf2"); // 안쪽 셔츠
+      p(15, 16, 1, 8, "#c7cede");
+      p(11, 16, 3, 8, "#574ccb"); // 재킷 자락
+      p(18, 16, 3, 8, "#574ccb");
+      p(9, 16, 2, 7, "#574ccb"); // 긴소매
+      p(22, 16, 2, 7, "#463cae");
+      p(12, 16, 2, 2, "#463cae"); // 옷깃
+      p(18, 16, 2, 2, "#463cae");
+    } else {
+      p(11, 16, 10, 8, "#23252e"); // 정장
+      p(9, 16, 2, 7, "#23252e");
+      p(22, 16, 2, 7, "#1a1c22");
+      p(14, 16, 4, 8, "#eef1f7"); // 셔츠 앞판
+      p(15, 17, 2, 6, tier >= 6 ? "#f6c945" : "#e5794b"); // 넥타이
+      p(12, 16, 2, 3, "#15161c"); // 옷깃
+      p(18, 16, 2, 3, "#15161c");
+    }
+
+    // ---- 머리카락 ----
+    p(9, 3, 14, 3, "#6b4a2f");
+    p(8, 4, 1, 5, "#6b4a2f");
+    p(23, 4, 1, 5, "#6b4a2f");
+    p(9, 5, 2, 3, "#6b4a2f");
+    p(21, 5, 2, 3, "#6b4a2f");
+    p(9, 3, 14, 1, "#7d5941"); // 윗머리 하이라이트
+
+    // ---- 눈, 입 ----
+    p(12, 9, 2, 3, "#2a2320");
+    p(18, 9, 2, 3, "#2a2320");
+    p(12, 9, 1, 1, "#ffffff");
+    p(18, 9, 1, 1, "#ffffff");
+    if (tier >= 4) {
+      p(14, 13, 4, 1, "#a85f48"); // 미소
+      p(15, 14, 2, 1, "#a85f48");
+    } else {
+      p(15, 13, 2, 1, "#a85f48");
+    }
+
+    // ---- 모자 / 왕관 ----
+    if (tier === 4 || tier === 5) {
+      p(7, 4, 18, 2, "#1b1d24"); // 챙
+      p(9, 0, 14, 4, "#23252e"); // 윗부분
+      p(9, 3, 14, 1, "#3a3d47"); // 밴드
+    }
+    if (tier >= 6) {
+      p(9, 1, 14, 3, "#f6c945");
+      p(9, 0, 2, 2, "#f6c945");
+      p(15, 0, 2, 2, "#f6c945");
+      p(21, 0, 2, 2, "#f6c945");
+      p(15, 1, 2, 2, "#4f7cff"); // 보석
+      p(11, 0, 1, 1, "#fff1b8");
+    }
   }
 
   /* ---------- 액션 ---------- */
