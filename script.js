@@ -23,6 +23,17 @@
     return Math.round((b - a) / 86400000);
   }
 
+  function addDays(key, n) {
+    var d = new Date(key + "T00:00:00");
+    d.setDate(d.getDate() + n);
+    return toKey(d);
+  }
+
+  var WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+  function weekdayOf(key) {
+    return WEEKDAYS[new Date(key + "T00:00:00").getDay()];
+  }
+
   function formatToday() {
     var d = new Date();
     return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일";
@@ -57,18 +68,32 @@
     if (typeof h.resistCount !== "number") h.resistCount = 0;
     if (typeof h.violationCount !== "number") h.violationCount = 0;
     if (!h.resistDate) h.resistDate = todayKey();
+    if (!Array.isArray(h.resistHistory)) h.resistHistory = [];
   });
 
-  // 참음 카운트는 하루 단위. 날짜가 바뀌었으면 0으로 되돌린다.
+  // 참음 카운트는 하루 단위. 자정을 넘겼으면 그날의 마무리 상태를 기록에 남기고 0으로 리셋.
   function rolloverResist() {
     var today = todayKey();
     var changed = false;
     habits.forEach(function (h) {
-      if (h.resistDate !== today) {
-        h.resistCount = 0;
-        h.resistDate = today;
-        changed = true;
+      if (h.resistDate === today) return;
+
+      // 마지막 활동일의 마무리 캐릭터 상태 저장
+      h.resistHistory.push({ date: h.resistDate, count: h.resistCount });
+      // 그 뒤로 건너뛴 날들은 "맨몸(0)"으로 마무리한 것으로 채움
+      var cursor = addDays(h.resistDate, 1);
+      var guard = 0;
+      while (cursor !== today && guard < 400) {
+        h.resistHistory.push({ date: cursor, count: 0 });
+        cursor = addDays(cursor, 1);
+        guard++;
       }
+      if (h.resistHistory.length > 7) {
+        h.resistHistory = h.resistHistory.slice(-7);
+      }
+      h.resistCount = 0;
+      h.resistDate = today;
+      changed = true;
     });
     if (changed) saveHabits(habits);
   }
@@ -243,6 +268,9 @@
     resistBox.appendChild(
       buildResistCharacter(habit.resistCount, habit.id === justResistedId)
     );
+    if (habit.resistHistory.length > 0) {
+      resistBox.appendChild(buildWeekStrip(habit.resistHistory));
+    }
 
     /* 어김 (작게) */
     var violations = document.createElement("div");
@@ -329,6 +357,44 @@
     wrap.appendChild(hint);
 
     return wrap;
+  }
+
+  // 최근 7일, 하루를 마무리한 캐릭터 상태를 작게 나열
+  function buildWeekStrip(history) {
+    var strip = document.createElement("div");
+    strip.className = "week";
+
+    var title = document.createElement("div");
+    title.className = "week__title";
+    title.textContent = "지난 7일 마무리";
+    strip.appendChild(title);
+
+    var row = document.createElement("div");
+    row.className = "week__row";
+
+    history.slice(-7).forEach(function (entry) {
+      var cell = document.createElement("div");
+      cell.className = "week__cell";
+
+      var mini = document.createElement("canvas");
+      mini.className = "week__canvas";
+      mini.width = 32 * 2;
+      mini.height = 32 * 2;
+      var mctx = mini.getContext("2d");
+      mctx.imageSmoothingEnabled = false;
+      drawCharacter(mctx, Math.min(entry.count, MAX_TIER), 2);
+      cell.appendChild(mini);
+
+      var day = document.createElement("span");
+      day.className = "week__day";
+      day.textContent = weekdayOf(entry.date);
+      cell.appendChild(day);
+
+      row.appendChild(cell);
+    });
+
+    strip.appendChild(row);
+    return strip;
   }
 
   // 32x32 격자에 도트 캐릭터를 그린다. tier(=오늘 참음 횟수)에 맞는 옷을 입힌다.
@@ -482,6 +548,7 @@
       violationCount: 0,
       resistCount: 0,
       resistDate: todayKey(),
+      resistHistory: [],
       createdAt: todayKey()
     });
     saveHabits(habits);
@@ -517,13 +584,9 @@
   }
 
   function resistHabit(id) {
+    rolloverResist(); // 날이 바뀌었으면 어제치를 기록에 남기고 리셋
     var habit = findHabit(id);
     if (!habit) return;
-    var today = todayKey();
-    if (habit.resistDate !== today) {
-      habit.resistCount = 0; // 날이 바뀌었으면 먼저 초기화
-      habit.resistDate = today;
-    }
     habit.resistCount += 1;
     justResistedId = id;
     saveHabits(habits);
@@ -532,12 +595,12 @@
   }
 
   function violateHabit(id) {
+    rolloverResist();
     var habit = findHabit(id);
     if (!habit) return;
     habit.violationCount += 1;
     habit.streakStartDate = todayKey(); // D-day 즉시 초기화
-    habit.resistCount = 0; // 참음 캐릭터도 초기화
-    habit.resistDate = todayKey();
+    habit.resistCount = 0; // 참음 캐릭터도 초기화 (오늘 마무리 상태는 자정에 기록됨)
     saveHabits(habits);
     render();
   }

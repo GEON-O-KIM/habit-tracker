@@ -461,6 +461,51 @@ body {
   }
 }
 
+/* 최근 7일 마무리 캐릭터 */
+.week {
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.week__title {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.week__row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.week__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.week__canvas {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.week__day {
+  font-size: 10px;
+  color: var(--muted);
+}
+
 .habit__violations {
   margin-top: 8px;
   font-size: 12px;
