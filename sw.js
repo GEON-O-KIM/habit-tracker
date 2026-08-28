@@ -1,6 +1,6 @@
 // 오프라인 캐시용 서비스워커
 // 파일을 수정하면 아래 버전을 올려서 캐시를 갱신하세요.
-var CACHE = "habit-tracker-v4";
+var CACHE = "habit-tracker-v5";
 var ASSETS = [
   "./",
   "./index.html",
