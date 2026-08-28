@@ -126,10 +126,6 @@ body {
   cursor: pointer;
 }
 
-.add-form__submit:hover {
-  background: #3d69ef;
-}
-
 /* Habit cards */
 .habits {
   display: flex;
@@ -174,10 +170,6 @@ body {
   padding: 4px;
   border-radius: 6px;
   line-height: 1;
-}
-
-.icon-btn:hover {
-  background: var(--bg);
 }
 
 .habit__dday {
@@ -269,10 +261,6 @@ body {
   padding: 10px 14px;
 }
 
-.btn--resist:hover {
-  background: var(--accent-soft);
-}
-
 .btn--violate {
   color: var(--warn);
   border-color: var(--warn);
@@ -280,7 +268,30 @@ body {
   padding: 10px 14px;
 }
 
-.btn--violate:hover {
+/* 마우스가 있는 기기에서만 hover 색을 준다 (터치하면 색이 눌러붙는 문제 방지) */
+@media (hover: hover) {
+  .btn--resist:hover {
+    background: var(--accent-soft);
+  }
+  .btn--violate:hover {
+    background: var(--warn-soft);
+  }
+  .add-form__submit:hover {
+    background: #3d69ef;
+  }
+  .icon-btn:hover {
+    background: var(--bg);
+  }
+  .footer__reset:hover {
+    color: var(--warn);
+  }
+}
+
+/* 터치/클릭 순간의 눌림 표시 (누르는 동안만 유지) */
+.btn--resist:active {
+  background: var(--accent-soft);
+}
+.btn--violate:active {
   background: var(--warn-soft);
 }
 
@@ -323,6 +334,56 @@ body {
   color: var(--text);
 }
 
+/* 참음 벽돌 탑 */
+.resist-tower {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 10px;
+  min-height: 10px;
+}
+
+.resist-tower:empty {
+  display: none;
+}
+
+.resist-tower__col {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+
+.brick {
+  width: 16px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.brick--new {
+  animation: brick-drop 0.32s ease;
+}
+
+@keyframes brick-drop {
+  0% {
+    transform: translateY(-9px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brick--new,
+  .resist-box__num.is-bumped {
+    animation: none;
+  }
+}
+
 .habit__violations {
   margin-top: 8px;
   font-size: 12px;
@@ -356,6 +417,3 @@ body {
   text-decoration: underline;
 }
 
-.footer__reset:hover {
-  color: var(--warn);
-}

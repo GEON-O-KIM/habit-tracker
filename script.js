@@ -227,6 +227,9 @@
     resistTop.appendChild(resistLabel);
 
     resistBox.appendChild(resistTop);
+    resistBox.appendChild(
+      buildResistTower(habit.resistCount, habit.id === justResistedId)
+    );
 
     /* 어김 (작게) */
     var violations = document.createElement("div");
@@ -242,6 +245,33 @@
     card.appendChild(violations);
 
     return card;
+  }
+
+  // 참음 횟수를 벽돌 탑으로 그린다. 한 칸에 8개씩 쌓고, 넘치면 오른쪽으로 새 칸.
+  function buildResistTower(count, animateLast) {
+    var tower = document.createElement("div");
+    tower.className = "resist-tower";
+
+    var PER_COL = 8;
+    var MAX_BRICKS = 240; // 너무 많으면 화면 보호용으로 제한
+    var shown = Math.min(count, MAX_BRICKS);
+    var placed = 0;
+
+    while (placed < shown) {
+      var col = document.createElement("div");
+      col.className = "resist-tower__col";
+      var inCol = Math.min(PER_COL, shown - placed);
+      for (var i = 0; i < inCol; i++) {
+        placed++;
+        var brick = document.createElement("span");
+        brick.className = "brick";
+        if (animateLast && placed === shown) brick.classList.add("brick--new");
+        col.appendChild(brick);
+      }
+      tower.appendChild(col);
+    }
+
+    return tower;
   }
 
   /* ---------- 액션 ---------- */
