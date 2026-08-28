@@ -56,7 +56,22 @@
   habits.forEach(function (h) {
     if (typeof h.resistCount !== "number") h.resistCount = 0;
     if (typeof h.violationCount !== "number") h.violationCount = 0;
+    if (!h.resistDate) h.resistDate = todayKey();
   });
+
+  // 참음 카운트는 하루 단위. 날짜가 바뀌었으면 0으로 되돌린다.
+  function rolloverResist() {
+    var today = todayKey();
+    var changed = false;
+    habits.forEach(function (h) {
+      if (h.resistDate !== today) {
+        h.resistCount = 0;
+        h.resistDate = today;
+        changed = true;
+      }
+    });
+    if (changed) saveHabits(habits);
+  }
 
   var listEl = document.getElementById("habitList");
   var emptyEl = document.getElementById("emptyState");
@@ -68,6 +83,7 @@
   /* ---------- 렌더 ---------- */
 
   function render() {
+    rolloverResist();
     var today = todayKey();
     listEl.innerHTML = "";
 
@@ -196,7 +212,7 @@
         confirm(
           '"' +
             habit.name +
-            '" 습관을 어겼나요?\nD-day가 D+0으로 초기화되고 어긴 횟수가 1 증가합니다.'
+            '" 습관을 어겼나요?\nD-day와 참음 캐릭터가 초기화되고, 어긴 횟수가 1 증가합니다.'
         )
       ) {
         violateHabit(habit.id);
@@ -221,7 +237,7 @@
 
     var resistLabel = document.createElement("span");
     resistLabel.className = "resist-box__label";
-    resistLabel.textContent = "번 참았어요";
+    resistLabel.textContent = "번 참았어요 (오늘)";
 
     resistTop.appendChild(resistNum);
     resistTop.appendChild(resistLabel);
@@ -249,39 +265,29 @@
 
   /* ---------- 참음 SD 캐릭터 ---------- */
 
-  // 참음 횟수가 이 값에 도달할 때마다 새 옷으로 업그레이드
-  var RESIST_TIERS = [1, 5, 10, 20, 35, 50];
-  var RESIST_TIER_NAMES = [
-    "맨몸으로 시작",
-    "티셔츠를 입었다",
-    "셔츠와 바지",
-    "멋진 재킷",
-    "정장과 중절모",
-    "망토 두른 기사",
-    "왕관 쓴 영웅"
+  // 참음 1번마다 다음 옷으로. 인덱스 = 오늘의 참음 횟수 (마지막 옷에서 멈춤).
+  var OUTFITS = [
+    { name: "맨몸으로 시작", style: "none" },
+    { name: "티셔츠", style: "tee", c: "#4f7cff", c2: "#3b63d6" },
+    { name: "반팔 반바지", style: "tee", c: "#e5794b", c2: "#c86038", shorts: "#3b6ea5" },
+    { name: "깔끔한 셔츠", style: "shirt" },
+    { name: "셔츠와 슬랙스", style: "shirt", pants: "#3b4b66" },
+    { name: "포근한 스웨터", style: "sweater", c: "#3f9e6a", c2: "#33845a", pants: "#3b4b66" },
+    { name: "멋진 재킷", style: "jacket", c: "#574ccb", c2: "#463cae", pants: "#2f3646" },
+    { name: "정장 차림", style: "suit", pants: "#23252e", tie: "#e5794b" },
+    { name: "정장과 중절모", style: "suit", pants: "#23252e", tie: "#e5794b", hat: true },
+    { name: "망토 두른 신사", style: "suit", pants: "#23252e", tie: "#f6c945", hat: true, cape: true },
+    { name: "왕관 쓴 영웅", style: "suit", pants: "#23252e", tie: "#f6c945", cape: true, crown: true }
   ];
-
-  function outfitTier(count) {
-    var t = 0;
-    for (var i = 0; i < RESIST_TIERS.length; i++) {
-      if (count >= RESIST_TIERS[i]) t = i + 1;
-    }
-    return t;
-  }
-
-  function nextTierAt(count) {
-    for (var i = 0; i < RESIST_TIERS.length; i++) {
-      if (count < RESIST_TIERS[i]) return RESIST_TIERS[i];
-    }
-    return null;
-  }
+  var MAX_TIER = OUTFITS.length - 1;
 
   function buildResistCharacter(count, animateLast) {
     var wrap = document.createElement("div");
     wrap.className = "sd";
 
-    var tier = outfitTier(count);
-    var leveledUp = animateLast && count > 0 && tier !== outfitTier(count - 1);
+    var tier = Math.min(count, MAX_TIER);
+    var prevTier = Math.min(Math.max(count - 1, 0), MAX_TIER);
+    var leveledUp = animateLast && count > 0 && tier !== prevTier;
 
     var stage = document.createElement("div");
     stage.className = "sd__stage";
@@ -316,31 +322,32 @@
 
     var label = document.createElement("div");
     label.className = "sd__label";
-    label.textContent = RESIST_TIER_NAMES[tier];
+    label.textContent = OUTFITS[tier].name;
     wrap.appendChild(label);
 
-    var next = nextTierAt(count);
     var hint = document.createElement("div");
     hint.className = "sd__hint";
-    hint.textContent = next ? "다음 옷까지 " + (next - count) + "번" : "최고 등급 달성!";
+    hint.textContent =
+      tier < MAX_TIER ? "한 번 더 참으면 새 옷!" : "최고의 옷을 완성했어요!";
     wrap.appendChild(hint);
 
     return wrap;
   }
 
-  // 32x32 격자에 도트 캐릭터를 그린다. tier 가 올라갈수록 옷이 좋아진다.
+  // 32x32 격자에 도트 캐릭터를 그린다. tier(=오늘 참음 횟수)에 맞는 옷을 입힌다.
   function drawCharacter(ctx, tier, S) {
     function p(x, y, w, h, c) {
       ctx.fillStyle = c;
       ctx.fillRect(x * S, y * S, w * S, h * S);
     }
 
+    var o = OUTFITS[Math.min(tier, MAX_TIER)];
     var SKIN = "#f6cfa6";
     var SKIN_D = "#e2b18c";
     var OL = "#2c2622"; // 외곽선
 
-    // 망토 (맨 뒤)
-    if (tier >= 5) {
+    // ---- 망토 (맨 뒤) ----
+    if (o.cape) {
       p(7, 15, 18, 14, "#5e1822");
       p(8, 16, 16, 12, "#a8323f");
       p(9, 17, 14, 10, "#c2434f");
@@ -349,86 +356,95 @@
 
     // ---- 실루엣(외곽선) ----
     p(9, 3, 14, 13, OL); // 머리 (네 모서리 1px 둥글게)
-    p(8, 5, 1, 9, OL); // 머리 왼쪽
-    p(23, 5, 1, 9, OL); // 머리 오른쪽
+    p(8, 5, 1, 9, OL);
+    p(23, 5, 1, 9, OL);
     p(10, 15, 12, 10, OL); // 몸통
     p(8, 16, 3, 9, OL); // 왼팔
     p(21, 16, 3, 9, OL); // 오른팔
     p(12, 23, 4, 7, OL); // 왼다리
     p(16, 23, 4, 7, OL); // 오른다리
 
-    // ---- 맨살 채우기 ----
-    p(10, 4, 12, 11, SKIN); // 얼굴 (모서리 둥글게)
-    p(9, 6, 1, 7, SKIN); // 왼뺨
-    p(22, 6, 1, 7, SKIN); // 오른뺨
+    // ---- 맨살 ----
+    p(10, 4, 12, 11, SKIN); // 얼굴
+    p(9, 6, 1, 7, SKIN);
+    p(22, 6, 1, 7, SKIN);
     p(13, 15, 6, 1, SKIN_D); // 목
     p(11, 16, 10, 8, SKIN); // 몸통
     p(9, 17, 2, 6, SKIN); // 왼팔
     p(22, 17, 2, 6, SKIN); // 오른팔
     p(13, 24, 2, 4, SKIN); // 왼다리
     p(18, 24, 2, 4, SKIN); // 오른다리
-    p(8, 10, 1, 3, SKIN_D); // 왼귀
-    p(23, 10, 1, 3, SKIN_D); // 오른귀
+    p(8, 10, 1, 3, SKIN_D); // 귀
+    p(23, 10, 1, 3, SKIN_D);
 
     // ---- 하의 ----
-    if (tier >= 2) {
-      var pants = tier >= 4 ? "#23252e" : "#3b4b66";
-      p(12, 23, 3, 5, pants);
-      p(17, 23, 3, 5, pants);
+    if (o.shorts) {
+      p(12, 22, 3, 3, o.shorts);
+      p(17, 22, 3, 3, o.shorts);
+    } else if (o.pants) {
+      p(12, 23, 3, 5, o.pants);
+      p(17, 23, 3, 5, o.pants);
     }
     // 신발
-    var shoe = tier >= 3 ? "#1c1f26" : "#6a5f52";
+    var dressShoe = o.pants || o.style === "jacket" || o.style === "suit";
+    var shoe = dressShoe ? "#1c1f26" : "#6a5f52";
     p(12, 28, 4, 2, shoe);
     p(16, 28, 4, 2, shoe);
 
     // ---- 상의 ----
-    if (tier === 0) {
+    if (o.style === "none") {
       p(12, 21, 8, 3, "#e2e6ef"); // 속옷
-    } else if (tier === 1) {
-      p(11, 16, 10, 6, "#4f7cff"); // 티셔츠
-      p(9, 16, 2, 3, "#4f7cff"); // 짧은 소매
-      p(22, 16, 2, 3, "#4f7cff");
-      p(11, 21, 10, 1, "#3b63d6"); // 밑단
-    } else if (tier === 2) {
-      p(11, 16, 10, 8, "#eef1f7"); // 셔츠
+    } else if (o.style === "tee") {
+      p(11, 16, 10, 6, o.c);
+      p(9, 16, 2, 3, o.c); // 짧은 소매
+      p(22, 16, 2, 3, o.c);
+      p(11, 21, 10, 1, o.c2); // 밑단
+    } else if (o.style === "shirt") {
+      p(11, 16, 10, 8, "#eef1f7");
       p(9, 16, 2, 6, "#eef1f7");
       p(22, 16, 2, 6, "#e3e7f0");
       p(15, 16, 1, 8, "#c7cede"); // 단추선
-    } else if (tier === 3) {
-      p(11, 16, 10, 8, "#e7eaf2"); // 안쪽 셔츠
+    } else if (o.style === "sweater") {
+      p(11, 15, 10, 9, o.c); // 목까지 덮는 니트
+      p(9, 16, 2, 7, o.c);
+      p(22, 16, 2, 7, o.c2);
+      p(13, 15, 4, 1, o.c2); // 칼라
+      p(11, 19, 10, 1, o.c2); // 짜임선
+    } else if (o.style === "jacket") {
+      p(12, 16, 8, 8, "#e7eaf2"); // 안쪽 셔츠
       p(15, 16, 1, 8, "#c7cede");
-      p(11, 16, 3, 8, "#574ccb"); // 재킷 자락
-      p(18, 16, 3, 8, "#574ccb");
-      p(9, 16, 2, 7, "#574ccb"); // 긴소매
-      p(22, 16, 2, 7, "#463cae");
-      p(12, 16, 2, 2, "#463cae"); // 옷깃
-      p(18, 16, 2, 2, "#463cae");
-    } else {
-      p(11, 16, 10, 8, "#23252e"); // 정장
+      p(11, 16, 3, 8, o.c); // 재킷 자락
+      p(18, 16, 3, 8, o.c);
+      p(9, 16, 2, 7, o.c); // 긴소매
+      p(22, 16, 2, 7, o.c2);
+      p(12, 16, 2, 3, o.c2); // 옷깃
+      p(18, 16, 2, 3, o.c2);
+    } else if (o.style === "suit") {
+      p(11, 16, 10, 8, "#23252e");
       p(9, 16, 2, 7, "#23252e");
       p(22, 16, 2, 7, "#1a1c22");
       p(14, 16, 4, 8, "#eef1f7"); // 셔츠 앞판
-      p(15, 17, 2, 6, tier >= 6 ? "#f6c945" : "#e5794b"); // 넥타이
       p(12, 16, 2, 3, "#15161c"); // 옷깃
       p(18, 16, 2, 3, "#15161c");
     }
+    if (o.tie) p(15, 17, 2, 5, o.tie);
 
     // ---- 머리카락 ----
-    p(9, 3, 14, 3, "#6b4a2f"); // 앞머리 (윗변도 둥근 폭)
+    p(9, 3, 14, 3, "#6b4a2f");
     p(9, 4, 1, 4, "#6b4a2f");
     p(22, 4, 1, 4, "#6b4a2f");
-    p(8, 5, 1, 3, "#6b4a2f"); // 옆머리
+    p(8, 5, 1, 3, "#6b4a2f");
     p(23, 5, 1, 3, "#6b4a2f");
-    p(9, 5, 3, 2, "#6b4a2f"); // 구레나룻
+    p(9, 5, 3, 2, "#6b4a2f");
     p(20, 5, 3, 2, "#6b4a2f");
-    p(11, 3, 10, 1, "#7d5941"); // 윗머리 하이라이트
+    p(11, 3, 10, 1, "#7d5941"); // 하이라이트
 
     // ---- 눈, 입 ----
     p(12, 9, 2, 3, "#2a2320");
     p(18, 9, 2, 3, "#2a2320");
     p(12, 9, 1, 1, "#ffffff");
     p(18, 9, 1, 1, "#ffffff");
-    if (tier >= 4) {
+    if (tier >= 7) {
       p(14, 13, 4, 1, "#a85f48"); // 미소
       p(15, 14, 2, 1, "#a85f48");
     } else {
@@ -436,12 +452,12 @@
     }
 
     // ---- 모자 / 왕관 ----
-    if (tier === 4 || tier === 5) {
+    if (o.hat) {
       p(7, 4, 18, 2, "#1b1d24"); // 챙
-      p(9, 0, 14, 4, "#23252e"); // 윗부분
+      p(9, 0, 14, 4, "#23252e");
       p(9, 3, 14, 1, "#3a3d47"); // 밴드
     }
-    if (tier >= 6) {
+    if (o.crown) {
       p(9, 1, 14, 3, "#f6c945");
       p(9, 0, 2, 2, "#f6c945");
       p(15, 0, 2, 2, "#f6c945");
@@ -468,6 +484,7 @@
       streakStartDate: todayKey(),
       violationCount: 0,
       resistCount: 0,
+      resistDate: todayKey(),
       checkedDates: [],
       createdAt: todayKey()
     });
@@ -520,6 +537,11 @@
   function resistHabit(id) {
     var habit = findHabit(id);
     if (!habit) return;
+    var today = todayKey();
+    if (habit.resistDate !== today) {
+      habit.resistCount = 0; // 날이 바뀌었으면 먼저 초기화
+      habit.resistDate = today;
+    }
     habit.resistCount += 1;
     justResistedId = id;
     saveHabits(habits);
@@ -532,6 +554,8 @@
     if (!habit) return;
     habit.violationCount += 1;
     habit.streakStartDate = todayKey(); // D-day 즉시 초기화
+    habit.resistCount = 0; // 참음 캐릭터도 초기화
+    habit.resistDate = todayKey();
     saveHabits(habits);
     render();
   }
