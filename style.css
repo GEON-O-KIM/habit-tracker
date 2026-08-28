@@ -1,42 +1,80 @@
+/* ============================================================
+   습관 트래커 — "하루" 테마
+   두 목소리: 픽셀 비트맵(장치가 읽어주는 숫자) + 휴먼 산세리프(사람이 쓰는 말)
+   시그니처: 캐릭터가 선 무대의 하늘이 실제 시각을 따라 흐르고 자정에 리셋된다.
+   ============================================================ */
+
+:root {
+  --paper: #e6e8f1;
+  --surface: #fbfbfe;
+  --surface-2: #eef0f7;
+  --ink: #1b1d2b;
+  --ink-dim: #6d7288;
+  --line: #d3d6e3;
+
+  --reward: #ef9f33;
+  --reward-deep: #c67d16;
+  --reward-tint: #fbe8c8;
+  --slip: #bd574b;
+  --slip-tint: #f7ece9;
+
+  --scene-ground: #2b2f4c;
+
+  /* 하늘 — script.js 가 20초마다 덮어씀 (기본값 = 한낮) */
+  --sky-top: #a8c1e6;
+  --sky-horizon: #dde7f2;
+  --sun: #fff7e2;
+  --day-frac: 50%;
+
+  --font-pixel: "DotGothic16", "Apple SD Gothic Neo", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  --r-card: 18px;
+  --r-win: 12px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-:root {
-  --bg: #f4f5f7;
-  --card: #ffffff;
-  --text: #1f2430;
-  --muted: #7b8494;
-  --border: #e3e6ec;
-  --accent: #4f7cff;
-  --accent-soft: #eaf0ff;
-  --success: #2fb37a;
-  --warn: #e5794b;
-  --warn-soft: #fdeee7;
-  --marker: #f6c945;
-  --radius: 14px;
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  padding: calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
-    calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  padding: calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+    calc(56px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
 }
 
 .app {
-  max-width: 560px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
-/* Header */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- 헤더 (스코어보드) ---------- */
+
 .header {
-  margin-bottom: 20px;
+  display: grid;
+  gap: 12px;
+  padding: 4px 2px 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
 }
 
 .header__top {
@@ -44,283 +82,349 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .header__title {
-  font-size: 22px;
-  font-weight: 700;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
 }
 
 .header__date {
-  color: var(--muted);
-  font-size: 14px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  white-space: nowrap;
 }
 
 .header__summary {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--accent);
-  font-weight: 600;
+  justify-self: start;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 12px;
 }
 
-/* Add form */
+.header__summary:empty {
+  display: none;
+}
+
+/* ---------- 습관 추가 ---------- */
+
 .add-form {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+}
+
+#habitForm {
+  display: grid;
+  gap: 10px;
 }
 
 .add-form__input {
   width: 100%;
-  padding: 10px 12px;
+  font-family: var(--font-sans);
   font-size: 15px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.add-form__input::placeholder {
+  color: var(--ink-dim);
 }
 
 .add-form__input:focus {
-  border-color: var(--accent);
+  border-color: var(--ink);
 }
 
 .add-form__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
 }
 
 .add-form__label {
-  font-size: 14px;
-  color: var(--muted);
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--ink-dim);
 }
 
 .add-form__number {
-  width: 68px;
-  padding: 8px 10px;
+  width: 62px;
+  font-family: var(--font-pixel);
   font-size: 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  outline: none;
   text-align: center;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .add-form__number:focus {
-  border-color: var(--accent);
+  border-color: var(--ink);
 }
 
 .add-form__submit {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--accent);
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--surface);
+  background: var(--ink);
   border: none;
   border-radius: 10px;
+  padding: 11px 22px;
   cursor: pointer;
+  transition: transform 0.08s ease;
 }
 
-/* Habit cards */
+.add-form__submit:active {
+  transform: translateY(1px);
+}
+
+/* ---------- 습관 목록 ---------- */
+
 .habits {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
 .habit {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 16px 16px 18px;
+  box-shadow: 0 1px 2px rgba(27, 29, 43, 0.04),
+    0 14px 30px -14px rgba(27, 29, 43, 0.16);
 }
 
+/* 카드 안 배치 순서 (DOM 순서는 유지, 화면 순서만 조정) */
+.habit__head { order: 1; }
+.habit__dday { order: 2; }
+.resist-box { order: 3; }
+.progress--day { order: 4; }
+.habit__meta--day { order: 5; }
+.habit__buttons { order: 6; }
+.progress:not(.progress--day) { order: 7; }
+.habit__meta:not(.habit__meta--day) { order: 8; }
+.habit__violations { order: 9; }
+
+/* 헤더 줄 */
 .habit__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
 .habit__name {
-  font-size: 17px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--ink);
 }
 
 .habit__actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
 .icon-btn {
   border: none;
   background: transparent;
-  font-size: 15px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
+  font-size: 14px;
   line-height: 1;
+  padding: 5px;
+  border-radius: 7px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
+/* D-day 판독 줄 */
 .habit__dday {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .tag {
+  font-family: var(--font-pixel);
   font-size: 13px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 3px 9px;
+}
+
+.habit__dday .tag:first-child {
+  color: var(--surface);
+  background: var(--ink);
+  border-color: var(--ink);
+  font-size: 14px;
 }
 
 .tag--goal {
-  background: #eef7f2;
-  color: var(--success);
+  color: var(--ink-dim);
 }
 
 .tag--achieved {
-  background: #fff3d6;
-  color: #b7820b;
+  color: var(--reward-deep);
+  background: var(--reward-tint);
+  border-color: #f0cd92;
 }
 
-.progress {
-  height: 8px;
-  background: var(--bg);
-  border-radius: 999px;
-  margin-top: 12px;
-  overflow: hidden;
-}
-
-.progress__bar {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 999px;
-  transition: width 0.3s ease;
-}
-
-.progress__bar--achieved {
-  background: var(--success);
-}
-
-/* 오늘 하루 진행바 (0시 → 24시) */
-.progress--day {
-  height: 5px;
-  margin-top: 10px;
-}
-
-.progress__bar--day {
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--muted),
-    var(--muted) 4px,
-    #9aa2b0 4px,
-    #9aa2b0 8px
-  );
-  transition: width 1s linear;
-}
-
-.habit__meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.habit__meta--day {
-  margin-top: 4px;
-  font-size: 11px;
-}
-
-.habit__buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
-  flex-wrap: wrap;
-}
-
-.btn {
-  flex: 1;
-  padding: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  cursor: pointer;
-}
-
-.btn--resist {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.btn--violate {
-  color: var(--warn);
-  border-color: var(--warn);
-}
-
-/* 마우스가 있는 기기에서만 hover 색을 준다 (터치하면 색이 눌러붙는 문제 방지) */
-@media (hover: hover) {
-  .btn--resist:hover {
-    background: var(--accent-soft);
-  }
-  .btn--violate:hover {
-    background: var(--warn-soft);
-  }
-  .add-form__submit:hover {
-    background: #3d69ef;
-  }
-  .icon-btn:hover {
-    background: var(--bg);
-  }
-  .footer__reset:hover {
-    color: var(--warn);
-  }
-}
-
-/* 터치/클릭 순간의 눌림 표시 (누르는 동안만 유지) */
-.btn--resist:active {
-  background: var(--accent-soft);
-}
-.btn--violate:active {
-  background: var(--warn-soft);
-}
+/* ---------- 무대 (참음 캐릭터) ---------- */
 
 .resist-box {
-  margin-top: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: var(--accent-soft);
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.sd {
+  order: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.sd__stage {
+  position: relative;
+  width: 100%;
+  height: 148px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-win);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(
+    to bottom,
+    var(--sky-top) 0%,
+    var(--sky-horizon) 84%,
+    rgba(255, 255, 255, 0.35) 84.5%,
+    var(--scene-ground) 85%,
+    var(--scene-ground) 100%
+  );
+}
+
+/* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
+.sd__stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  width: 96px;
+  height: 74px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.3),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* 하늘을 가로지르는 해 (자정 0% → 자정 100%) */
+.sd__stage::after {
+  content: "";
+  position: absolute;
+  left: var(--day-frac);
+  top: 60%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff, var(--sun));
+  box-shadow: 0 0 16px 5px rgba(239, 159, 51, 0.35);
+  transition: left 1s linear, background 1s linear;
+  pointer-events: none;
+}
+
+.sd__canvas {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin-bottom: 3px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  z-index: 1;
+}
+
+.sd__shadow {
+  position: absolute;
+  bottom: 15px;
+  width: 60px;
+  height: 9px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  filter: blur(1.5px);
+}
+
+.sd__label {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+.sd__hint {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-dim);
 }
 
 .resist-box__top {
+  order: 2;
   display: flex;
   align-items: baseline;
-  justify-content: center;
   gap: 5px;
 }
 
 .resist-box__num {
   display: inline-block;
+  font-family: var(--font-pixel);
   font-size: 22px;
-  font-weight: 700;
-  color: var(--accent);
   line-height: 1;
+  color: var(--reward-deep);
+}
+
+.resist-box__label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--ink-dim);
 }
 
 .resist-box__num.is-bumped {
@@ -333,61 +437,13 @@ body {
   100% { transform: scale(1); }
 }
 
-.resist-box__label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-/* 참음 SD 캐릭터 */
-.sd {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.sd__stage {
-  position: relative;
-  width: 128px;
-  height: 128px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.sd__canvas {
-  width: 128px;
-  height: 128px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  position: relative;
-  z-index: 1;
-}
-
-.sd__shadow {
-  position: absolute;
-  bottom: 8px;
-  width: 54px;
-  height: 9px;
-  background: rgba(31, 36, 48, 0.16);
-  border-radius: 50%;
-  filter: blur(1px);
-}
-
 .sd__stage--bob .sd__canvas {
   animation: sd-bob 0.5s ease;
 }
 
 @keyframes sd-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-6px);
-  }
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
 }
 
 .sd__stage--levelup .sd__canvas {
@@ -395,25 +451,17 @@ body {
 }
 
 @keyframes sd-jump {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  35% {
-    transform: translateY(-16px) scale(1.06);
-  }
-  70% {
-    transform: translateY(0) scale(0.96);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-16px) scale(1.06); }
+  70% { transform: translateY(0) scale(0.96); }
+  100% { transform: translateY(0) scale(1); }
 }
 
 .sd__spark {
   position: absolute;
   width: 6px;
   height: 6px;
-  background: var(--marker);
+  background: var(--reward);
   border-radius: 1px;
   transform: rotate(45deg);
   opacity: 0;
@@ -421,81 +469,34 @@ body {
   z-index: 2;
 }
 
-.sd__spark--0 {
-  top: 16px;
-  left: 30px;
-  animation-delay: 0.02s;
-}
-.sd__spark--1 {
-  top: 26px;
-  right: 26px;
-  animation-delay: 0.1s;
-}
-.sd__spark--2 {
-  top: 54px;
-  left: 20px;
-  animation-delay: 0.16s;
-}
-.sd__spark--3 {
-  top: 44px;
-  right: 18px;
-  animation-delay: 0.22s;
-}
-.sd__spark--4 {
-  top: 8px;
-  left: calc(50% - 3px);
-  animation-delay: 0.06s;
-}
+.sd__spark--0 { top: 16px; left: 62%; animation-delay: 0.02s; }
+.sd__spark--1 { top: 28px; right: 20%; animation-delay: 0.1s; }
+.sd__spark--2 { top: 66px; left: 16%; animation-delay: 0.16s; }
+.sd__spark--3 { top: 48px; right: 14%; animation-delay: 0.22s; }
+.sd__spark--4 { top: 10px; left: calc(50% - 3px); animation-delay: 0.06s; }
 
 @keyframes sd-spark {
-  0% {
-    opacity: 0;
-    transform: rotate(45deg) scale(0.2);
-  }
-  40% {
-    opacity: 1;
-    transform: rotate(45deg) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(45deg) scale(0.4) translateY(-8px);
-  }
+  0% { opacity: 0; transform: rotate(45deg) scale(0.2); }
+  40% { opacity: 1; transform: rotate(45deg) scale(1); }
+  100% { opacity: 0; transform: rotate(45deg) scale(0.4) translateY(-8px); }
 }
 
-.sd__label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-}
+/* ---------- 지난 7일 ---------- */
 
-.sd__hint {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sd__canvas,
-  .resist-box__num.is-bumped {
-    animation: none;
-  }
-  .sd__spark {
-    display: none;
-  }
-}
-
-/* 최근 7일 마무리 캐릭터 */
 .week {
+  order: 3;
   width: 100%;
-  margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--line);
 }
 
 .week__title {
+  font-family: var(--font-pixel);
   font-size: 11px;
-  color: var(--muted);
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
   text-align: center;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .week__row {
@@ -509,7 +510,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   flex: 0 0 auto;
 }
 
@@ -518,29 +519,140 @@ body {
   height: 32px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: linear-gradient(
+    to bottom,
+    #c7cfe9 0%,
+    #ecd8c6 76%,
+    #2f3350 76%
+  );
 }
 
 .week__day {
+  font-family: var(--font-pixel);
   font-size: 10px;
-  color: var(--muted);
+  color: var(--ink-dim);
 }
+
+/* ---------- 오늘 하루 진행바 (0시 → 24시) ---------- */
+
+.progress {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.progress__bar--achieved {
+  background: var(--reward);
+}
+
+.progress--day {
+  overflow: visible;
+  position: relative;
+}
+
+.progress__bar--day {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f1dcbb, var(--reward));
+  transition: width 1s linear;
+  position: relative;
+}
+
+.progress__bar--day::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff, var(--sun));
+  box-shadow: 0 0 7px 2px rgba(239, 159, 51, 0.4);
+}
+
+.habit__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--ink-dim);
+}
+
+.habit__meta--day .day-time {
+  color: var(--ink);
+}
+
+/* ---------- 버튼 ---------- */
+
+.habit__buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--resist {
+  flex: 2;
+  color: #2d1c02;
+  background: var(--reward);
+  border-color: var(--reward-deep);
+}
+
+.btn--violate {
+  flex: 1;
+  color: var(--slip);
+  background: transparent;
+  border-color: #e2b6b0;
+}
+
+/* ---------- 어긴 횟수 ---------- */
 
 .habit__violations {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--muted);
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--ink-dim);
   text-align: center;
 }
 
-/* Empty + footer */
+/* ---------- 빈 상태 / 푸터 ---------- */
+
 .empty {
   text-align: center;
-  color: var(--muted);
+  font-family: var(--font-sans);
   font-size: 14px;
-  padding: 32px 0;
+  color: var(--ink-dim);
+  padding: 38px 18px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-card);
 }
 
 .empty.is-hidden {
@@ -548,16 +660,71 @@ body {
 }
 
 .footer {
-  margin-top: 28px;
+  margin-top: 26px;
   text-align: center;
 }
 
 .footer__reset {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
   background: transparent;
   border: none;
-  color: var(--muted);
-  font-size: 13px;
+  padding: 6px 10px;
   cursor: pointer;
-  text-decoration: underline;
+  transition: color 0.15s ease;
 }
 
+/* ---------- hover (마우스 있는 기기만) ---------- */
+
+@media (hover: hover) {
+  .icon-btn:hover {
+    opacity: 1;
+    background: var(--surface-2);
+  }
+  .add-form__submit:hover {
+    background: #33374a;
+  }
+  .btn--resist:hover {
+    background: var(--reward-deep);
+    color: #fff;
+  }
+  .btn--violate:hover {
+    background: var(--slip-tint);
+  }
+  .footer__reset:hover {
+    color: var(--slip);
+  }
+}
+
+/* ---------- 등장 애니메이션 ---------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .habit {
+    animation: card-rise 0.45s ease both;
+  }
+  .habit:nth-child(2) { animation-delay: 0.05s; }
+  .habit:nth-child(3) { animation-delay: 0.1s; }
+  .habit:nth-child(4) { animation-delay: 0.15s; }
+  .habit:nth-child(n + 5) { animation-delay: 0.2s; }
+
+  @keyframes card-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .sd__spark {
+    display: none;
+  }
+}

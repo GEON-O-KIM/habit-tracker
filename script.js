@@ -50,6 +50,58 @@
     );
   }
 
+  /* ---------- 하늘 (시각에 따라 무대 배경색) ---------- */
+
+  function lerpChannel(a, b, t) {
+    return Math.round(a + (b - a) * t);
+  }
+  function lerpHex(h1, h2, t) {
+    var a = parseInt(h1.slice(1), 16);
+    var b = parseInt(h2.slice(1), 16);
+    return (
+      "rgb(" +
+      lerpChannel((a >> 16) & 255, (b >> 16) & 255, t) +
+      "," +
+      lerpChannel((a >> 8) & 255, (b >> 8) & 255, t) +
+      "," +
+      lerpChannel(a & 255, b & 255, t) +
+      ")"
+    );
+  }
+
+  // 하루 진행률(0~1) → 하늘 위 / 지평선 / 해 색
+  var SKY_STOPS = [
+    { t: 0.0, top: "#0e1230", hor: "#1a1e3e", sun: "#cdd7f5" },
+    { t: 0.2, top: "#141a3a", hor: "#3a3766", sun: "#dfe4fb" },
+    { t: 0.28, top: "#5f76b4", hor: "#f0b982", sun: "#fff3d6" },
+    { t: 0.5, top: "#a8c1e6", hor: "#dde7f2", sun: "#fff7e2" },
+    { t: 0.74, top: "#8f9fd0", hor: "#f2b877", sun: "#ffe9c2" },
+    { t: 0.82, top: "#585596", hor: "#e88a5c", sun: "#ffdcb0" },
+    { t: 0.9, top: "#2c2c5a", hor: "#5c4a7e", sun: "#c9c2e8" },
+    { t: 1.0, top: "#0e1230", hor: "#1a1e3e", sun: "#cdd7f5" }
+  ];
+
+  function applySky() {
+    var n = new Date();
+    var frac =
+      (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()) / 86400;
+    var lo = SKY_STOPS[0];
+    var hi = SKY_STOPS[SKY_STOPS.length - 1];
+    for (var i = 0; i < SKY_STOPS.length - 1; i++) {
+      if (frac >= SKY_STOPS[i].t && frac <= SKY_STOPS[i + 1].t) {
+        lo = SKY_STOPS[i];
+        hi = SKY_STOPS[i + 1];
+        break;
+      }
+    }
+    var k = hi.t === lo.t ? 0 : (frac - lo.t) / (hi.t - lo.t);
+    var s = document.documentElement.style;
+    s.setProperty("--sky-top", lerpHex(lo.top, hi.top, k));
+    s.setProperty("--sky-horizon", lerpHex(lo.hor, hi.hor, k));
+    s.setProperty("--sun", lerpHex(lo.sun, hi.sun, k));
+    s.setProperty("--day-frac", (frac * 100).toFixed(2) + "%");
+  }
+
   function formatToday() {
     var d = new Date();
     return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일";
@@ -667,10 +719,12 @@
   var currentDate = todayKey();
 
   document.getElementById("todayDate").textContent = formatToday();
+  applySky();
   render();
 
-  // 하루 진행바·시계를 주기적으로 갱신. 자정을 넘기면 전체 다시 그림.
+  // 하늘·하루 진행바·시계를 주기적으로 갱신. 자정을 넘기면 전체 다시 그림.
   setInterval(function () {
+    applySky();
     if (todayKey() !== currentDate) {
       currentDate = todayKey();
       document.getElementById("todayDate").textContent = formatToday();

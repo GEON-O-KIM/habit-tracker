@@ -7,12 +7,18 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#4f7cff" />
+  <meta name="theme-color" content="#e6e8f1" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="습관" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -56,7 +62,9 @@
 
     <section class="habits" id="habitList"></section>
 
-    <p class="empty" id="emptyState">아직 습관이 없어요. 위에서 추가해 보세요.</p>
+    <p class="empty" id="emptyState">
+      첫 습관을 추가하면, 참을 때마다 옷을 갈아입는 캐릭터가 여기 나타나요.
+    </p>
 
     <footer class="footer">
       <button id="resetAll" class="footer__reset">전체 초기화</button>

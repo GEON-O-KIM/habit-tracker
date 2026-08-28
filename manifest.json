@@ -1,13 +1,13 @@
 {
   "name": "습관 트래커",
   "short_name": "습관",
-  "description": "오늘의 습관 체크, D-day, 참음/어김 기록",
+  "description": "D-day와 참음 캐릭터로 하루하루를 지키는 습관 트래커",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f4f5f7",
-  "theme_color": "#4f7cff",
+  "background_color": "#e6e8f1",
+  "theme_color": "#e6e8f1",
   "icons": [
     {
       "src": "icon-192.png",
