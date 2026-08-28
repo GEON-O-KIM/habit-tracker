@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>습관 트래커</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4f7cff" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="습관" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__top">
+        <h1 class="header__title">습관 트래커</h1>
+        <p class="header__date" id="todayDate">2026년 1월 1일</p>
+      </div>
+      <p class="header__summary" id="summary">오늘 완료 0 / 0</p>
+    </header>
+
+    <section class="add-form">
+      <form id="habitForm">
+        <input
+          type="text"
+          id="habitName"
+          class="add-form__input"
+          placeholder="습관 이름 (예: 아침 운동)"
+          maxlength="30"
+          required
+        />
+        <div class="add-form__row">
+          <label class="add-form__label">
+            목표
+            <input
+              type="number"
+              id="habitGoal"
+              class="add-form__number"
+              value="30"
+              min="1"
+              max="3650"
+              required
+            />
+            일
+          </label>
+          <button type="submit" class="add-form__submit">추가</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="habits" id="habitList"></section>
+
+    <p class="empty" id="emptyState">아직 습관이 없어요. 위에서 추가해 보세요.</p>
+
+    <footer class="footer">
+      <button id="resetAll" class="footer__reset">전체 초기화</button>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
