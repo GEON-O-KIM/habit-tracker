@@ -34,6 +34,22 @@
     return WEEKDAYS[new Date(key + "T00:00:00").getDay()];
   }
 
+  // 0시부터 지금까지 하루가 얼마나 지났는지 (%)
+  function dayProgressPercent() {
+    var n = new Date();
+    var secs = n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds();
+    return Math.min(100, (secs / 86400) * 100).toFixed(1);
+  }
+
+  function clockText() {
+    var n = new Date();
+    return (
+      String(n.getHours()).padStart(2, "0") +
+      ":" +
+      String(n.getMinutes()).padStart(2, "0")
+    );
+  }
+
   function formatToday() {
     var d = new Date();
     return d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일";
@@ -127,16 +143,16 @@
         if (d > best) best = d;
       });
       summaryEl.textContent =
-        "진행 중 " + habits.length + "개 · 최고 연속 " + best + "일";
+        "진행 중 " + habits.length + "개 · 최고 연속 " + (best + 1) + "일";
     }
   }
 
   function buildCard(habit, today) {
-    var elapsed = daysBetween(habit.streakStartDate, today); // D+elapsed
-    if (elapsed < 0) elapsed = 0;
-    var remaining = habit.goalDays - elapsed; // D-remaining
+    var dayNum = daysBetween(habit.streakStartDate, today) + 1; // 시작일이 1일차
+    if (dayNum < 1) dayNum = 1;
+    var remaining = habit.goalDays - dayNum; // D-remaining
     var achieved = remaining <= 0;
-    var percent = Math.min(100, Math.round((elapsed / habit.goalDays) * 100));
+    var percent = Math.min(100, Math.round((dayNum / habit.goalDays) * 100));
 
     var card = document.createElement("div");
     card.className = "habit";
@@ -183,7 +199,7 @@
 
     var elapsedTag = document.createElement("span");
     elapsedTag.className = "tag";
-    elapsedTag.textContent = "D+" + elapsed;
+    elapsedTag.textContent = "D+" + dayNum;
     dday.appendChild(elapsedTag);
 
     var goalTag = document.createElement("span");
@@ -212,6 +228,24 @@
     metaRight.textContent = percent + "%";
     meta.appendChild(metaLeft);
     meta.appendChild(metaRight);
+
+    /* 오늘 하루 진행바 (0시 → 24시) */
+    var dayProgress = document.createElement("div");
+    dayProgress.className = "progress progress--day";
+    var dayBar = document.createElement("div");
+    dayBar.className = "progress__bar progress__bar--day";
+    dayBar.style.width = dayProgressPercent() + "%";
+    dayProgress.appendChild(dayBar);
+
+    var dayMeta = document.createElement("div");
+    dayMeta.className = "habit__meta habit__meta--day";
+    var dayMetaLeft = document.createElement("span");
+    dayMetaLeft.textContent = "오늘";
+    var dayMetaRight = document.createElement("span");
+    dayMetaRight.className = "day-time";
+    dayMetaRight.textContent = clockText();
+    dayMeta.appendChild(dayMetaLeft);
+    dayMeta.appendChild(dayMetaRight);
 
     /* 버튼 */
     var buttons = document.createElement("div");
@@ -281,6 +315,8 @@
     card.appendChild(dday);
     card.appendChild(progress);
     card.appendChild(meta);
+    card.appendChild(dayProgress);
+    card.appendChild(dayMeta);
     card.appendChild(buttons);
     card.appendChild(resistBox);
     card.appendChild(violations);
@@ -628,6 +664,24 @@
 
   /* ---------- 초기화 ---------- */
 
+  var currentDate = todayKey();
+
   document.getElementById("todayDate").textContent = formatToday();
   render();
+
+  // 하루 진행바·시계를 주기적으로 갱신. 자정을 넘기면 전체 다시 그림.
+  setInterval(function () {
+    if (todayKey() !== currentDate) {
+      currentDate = todayKey();
+      document.getElementById("todayDate").textContent = formatToday();
+      render();
+      return;
+    }
+    var w = dayProgressPercent() + "%";
+    var bars = document.querySelectorAll(".progress__bar--day");
+    for (var i = 0; i < bars.length; i++) bars[i].style.width = w;
+    var t = clockText();
+    var times = document.querySelectorAll(".day-time");
+    for (var j = 0; j < times.length; j++) times[j].textContent = t;
+  }, 20000);
 })();

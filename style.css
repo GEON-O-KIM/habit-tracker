@@ -214,6 +214,23 @@ body {
   background: var(--success);
 }
 
+/* 오늘 하루 진행바 (0시 → 24시) */
+.progress--day {
+  height: 5px;
+  margin-top: 10px;
+}
+
+.progress__bar--day {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--muted),
+    var(--muted) 4px,
+    #9aa2b0 4px,
+    #9aa2b0 8px
+  );
+  transition: width 1s linear;
+}
+
 .habit__meta {
   display: flex;
   justify-content: space-between;
@@ -221,6 +238,11 @@ body {
   margin-top: 6px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.habit__meta--day {
+  margin-top: 4px;
+  font-size: 11px;
 }
 
 .habit__buttons {
