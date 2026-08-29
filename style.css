@@ -406,9 +406,9 @@ body {
 
 .sd__canvas {
   position: relative;
-  width: 96px;
-  height: 96px;
-  margin-bottom: 3px;
+  width: 112px;
+  height: 112px;
+  margin-bottom: 2px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   z-index: 2;
@@ -416,9 +416,9 @@ body {
 
 .sd__shadow {
   position: absolute;
-  bottom: 12px;
-  width: 46px;
-  height: 7px;
+  bottom: 11px;
+  width: 52px;
+  height: 8px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   filter: blur(1.5px);

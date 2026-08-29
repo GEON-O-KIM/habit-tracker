@@ -494,7 +494,7 @@
     shadow.className = "sd__shadow";
     stage.appendChild(shadow);
 
-    var S = 6;
+    var S = 7;
     var canvas = document.createElement("canvas");
     canvas.className = "sd__canvas";
     canvas.width = 32 * S;
