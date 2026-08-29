@@ -323,7 +323,7 @@ body {
 .sd__stage {
   position: relative;
   width: 100%;
-  height: 140px;
+  height: 152px;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   overflow: hidden;
@@ -384,10 +384,10 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: -8px;
   margin: 0 auto;
-  width: 340px;
-  max-width: 100%;
+  width: 380px;
+  max-width: 102%;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;

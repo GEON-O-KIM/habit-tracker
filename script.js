@@ -495,9 +495,9 @@
     stage.appendChild(shadow);
 
     // 마을 (캐릭터 뒤)
-    var townW = 220;
-    var townH = 58;
-    var townS = 3;
+    var townW = 200;
+    var townH = 52;
+    var townS = 4;
     var town = document.createElement("canvas");
     town.className = "sd__town";
     town.width = townW * townS;
@@ -549,7 +549,7 @@
     if (plots >= 9) return "🎏 마을 완공!";
 
     var dn = daysBetween(habit.streakStartDate, today) + 1;
-    if (dn <= habit.townMax) {
+    if (dn < habit.townMax) {
       // 어김 후 회복 중 — 예전 규모를 되찾아야 새 건물
       return "예전 마을까지 " + (habit.townMax - dn + 1) + "일";
     }
@@ -558,8 +558,8 @@
   }
 
   // 마을 그리기. 캐릭터가 선 무대의 지면에 구조물이 하나씩 늘어난다.
-  var TOWN_SLOT_X = [38, 182, 16, 204, 60, 160, 88, 132, 110];
-  var TOWN_FRONT_X = [30, 74, 118, 162, 198];
+  var TOWN_SLOT_X = [46, 154, 20, 178, 70, 132, 96, 116, 100];
+  var TOWN_FRONT_X = [30, 68, 106, 144, 178];
 
   function drawTown(tctx, habit, today, W, H, S) {
     function p(x, y, w, h, c) {
@@ -579,7 +579,7 @@
     var FLOWER1 = "#ef7fa8", FLOWER2 = "#f4c94c";
     var BRASS = "#caa24a";
 
-    var groundY = 50;
+    var groundY = 40;
     var complete = plotCount(habit) >= 9;
 
     function structure(type, cx, by) {
