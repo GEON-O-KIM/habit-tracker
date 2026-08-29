@@ -522,7 +522,7 @@
 
     // 마을 칸 (스타듀밸리 느낌, 캐릭터는 작게 들어감)
     var vW = 182;
-    var vH = 52;
+    var vH = 44;
     var vS = 5;
     var village = document.createElement("canvas");
     village.className = "sd__village";
@@ -559,18 +559,18 @@
 
   // 마을 칸. 스타듀밸리풍 풀밭·길·밭, 구조물이 하나씩 들어서고 캐릭터는 작게 서 있다.
   var VILLAGE_POS = {
-    belltower: [30, 31],
-    hut: [52, 34],
-    house: [80, 36],
-    house2: [106, 37],
-    shop: [136, 35],
-    tent: [158, 41],
-    well: [40, 45],
-    tree: [172, 49],
-    signpost: [118, 47]
+    belltower: [28, 25],
+    hut: [52, 28],
+    house: [80, 30],
+    house2: [106, 31],
+    shop: [136, 29],
+    tent: [158, 34],
+    well: [42, 38],
+    tree: [170, 42],
+    signpost: [118, 40]
   };
-  var VILLAGE_FRONT_X = [124, 138, 150, 160, 170];
-  var VILLAGE_CHAR = [88, 47];
+  var VILLAGE_FRONT_X = [126, 140, 150, 160, 170];
+  var VILLAGE_CHAR = [90, 40];
 
   function drawVillage(vctx, habit, today, tier, W, H, S) {
     function p(x, y, w, h, c) {
@@ -595,36 +595,46 @@
 
     // 풀밭
     p(0, 0, W, H, GRASS);
-    var seed = 1;
-    for (var g = 0; g < 64; g++) {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var gx = seed % W;
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var gy = 4 + (seed % (H - 6));
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      p(gx, gy, seed % 3 ? 1 : 2, 1, seed % 2 ? GRASS_D : GRASS_L);
-    }
+    // 뒤쪽 언덕
+    [[26, 8, 40], [96, 7, 46], [150, 9, 40]].forEach(function (hl) {
+      p(hl[0], hl[1], hl[2], 4, GRASS_D);
+      p(hl[0] + 5, hl[1] - 2, hl[2] - 10, 2, GRASS_D);
+      p(hl[0] + 12, hl[1] - 3, hl[2] - 24, 1, GRASS_D);
+    });
     // 위쪽 숲 가장자리 + 나무 몇 그루
     p(0, 0, W, 3, FOREST);
     for (var fx = 0; fx < W; fx += 5) p(fx, 3, 2, 1, FOREST);
-    [18, 64, 120, 158].forEach(function (tx) {
+    [16, 60, 116, 156].forEach(function (tx) {
       p(tx - 3, 0, 6, 3, LEAF_D);
       p(tx - 2, 0, 4, 2, LEAF);
     });
+    // 풀밭에 흩뿌린 들꽃·풀
+    var seed = 7;
+    for (var g = 0; g < 40; g++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var gx = 2 + (seed % (W - 4));
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var gy = 10 + (seed % 20);
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var pick = seed % 5;
+      if (pick === 0) p(gx, gy, 1, 1, "#f4c94c");
+      else if (pick === 1) p(gx, gy, 1, 1, "#ef7fa8");
+      else p(gx, gy, seed % 3 ? 1 : 2, 1, seed % 2 ? GRASS_D : GRASS_L);
+    }
     // 길 (가로로 살짝 굽이치게)
     for (var px = 0; px < W; px += 2) {
-      p(px, 39 + ((px / 10) % 2 ? 1 : 0), 2, 10, PATH);
+      p(px, 32 + ((px / 10) % 2 ? 1 : 0), 2, 12, PATH);
     }
-    p(0, 39, W, 1, PATH_E);
+    p(0, 32, W, 1, PATH_E);
     // 왼쪽 아래 텃밭 + 울타리
-    p(6, 44, 22, 7, SOIL);
-    for (var sy = 45; sy < 51; sy += 2) p(6, sy, 22, 1, SOIL_D);
+    p(6, 36, 22, 7, SOIL);
+    for (var sy = 37; sy < 43; sy += 2) p(6, sy, 22, 1, SOIL_D);
     for (var cx2 = 9; cx2 < 27; cx2 += 4) {
-      for (var cy = 44; cy < 51; cy += 2) p(cx2, cy, 1, 1, SPROUT);
+      for (var cy = 36; cy < 43; cy += 2) p(cx2, cy, 1, 1, SPROUT);
     }
-    for (var ffx = 6; ffx < 30; ffx += 4) p(ffx, 43, 1, 3, FENCE_D);
-    p(6, 42, 24, 1, FENCE);
-    p(28, 42, 1, 9, FENCE_D);
+    for (var ffx = 6; ffx < 30; ffx += 4) p(ffx, 35, 1, 3, FENCE_D);
+    p(6, 34, 24, 1, FENCE);
+    p(28, 34, 1, 9, FENCE_D);
 
     function structure(type, cx, by) {
       var x0;
@@ -748,7 +758,7 @@
     var marks = habit.slipMarks.slice(-5);
     for (var m = 0; m < marks.length; m++) {
       var mx = VILLAGE_FRONT_X[m];
-      var my = 50;
+      var my = 42;
       var healed = daysBetween(marks[m].at, today) >= 7;
       if (healed) {
         p(mx - 4, my - 2, 8, 2, "#4f8a63");
