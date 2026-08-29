@@ -494,19 +494,6 @@
     shadow.className = "sd__shadow";
     stage.appendChild(shadow);
 
-    // 마을 (캐릭터 뒤)
-    var townW = 140;
-    var townH = 60;
-    var townS = 6;
-    var town = document.createElement("canvas");
-    town.className = "sd__town";
-    town.width = townW * townS;
-    town.height = townH * townS;
-    var tctx = town.getContext("2d");
-    tctx.imageSmoothingEnabled = false;
-    drawTown(tctx, habit, today, townW, townH, townS);
-    stage.appendChild(town);
-
     var GRID = 32;
     var S = 8;
     var canvas = document.createElement("canvas");
@@ -533,6 +520,19 @@
     label.textContent = OUTFITS[tier].name;
     wrap.appendChild(label);
 
+    // 마을 칸 (스타듀밸리 느낌, 캐릭터는 작게 들어감)
+    var vW = 182;
+    var vH = 52;
+    var vS = 5;
+    var village = document.createElement("canvas");
+    village.className = "sd__village";
+    village.width = vW * vS;
+    village.height = vH * vS;
+    var vctx = village.getContext("2d");
+    vctx.imageSmoothingEnabled = false;
+    drawVillage(vctx, habit, today, tier, vW, vH, vS);
+    wrap.appendChild(village);
+
     var hint = document.createElement("div");
     hint.className = "sd__hint";
     hint.textContent = townHint(habit, today);
@@ -557,14 +557,25 @@
     return "마을 " + plots + "/9 · 다음 건물까지 " + (thr[plots] - habit.townMax) + "일";
   }
 
-  // 마을 그리기. 캐릭터가 선 무대의 지면에 구조물이 하나씩 늘어난다.
-  var TOWN_SLOT_X = [38, 102, 20, 120, 54, 90, 44, 108, 28];
-  var TOWN_FRONT_X = [26, 56, 86, 116, 132];
+  // 마을 칸. 스타듀밸리풍 풀밭·길·밭, 구조물이 하나씩 들어서고 캐릭터는 작게 서 있다.
+  var VILLAGE_POS = {
+    belltower: [30, 31],
+    hut: [52, 34],
+    house: [80, 36],
+    house2: [106, 37],
+    shop: [136, 35],
+    tent: [158, 41],
+    well: [40, 45],
+    tree: [172, 49],
+    signpost: [118, 47]
+  };
+  var VILLAGE_FRONT_X = [124, 138, 150, 160, 170];
+  var VILLAGE_CHAR = [88, 47];
 
-  function drawTown(tctx, habit, today, W, H, S) {
+  function drawVillage(vctx, habit, today, tier, W, H, S) {
     function p(x, y, w, h, c) {
-      tctx.fillStyle = c;
-      tctx.fillRect(Math.round(x * S), Math.round(y * S), Math.round(w * S), Math.round(h * S));
+      vctx.fillStyle = c;
+      vctx.fillRect(Math.round(x * S), Math.round(y * S), Math.round(w * S), Math.round(h * S));
     }
 
     var OL = "#241f30";
@@ -574,13 +585,46 @@
     var WIN = "#f4cd72", DOOR = "#3a281c";
     var TRUNK = "#5f4433", LEAF = "#4a8a63", LEAF_D = "#3a6e4e", LEAF_H = "#5fa078";
     var TENT = "#c9b487", TENT_D = "#a68f63";
-    var GRASS = "#4f8a63";
     var RUBBLE = "#83859a", RUBBLE_D = "#5c5e6c";
-    var FLOWER1 = "#ef7fa8", FLOWER2 = "#f4c94c";
-    var BRASS = "#caa24a";
+    var FLOWER1 = "#ef7fa8", FLOWER2 = "#f4c94c", BRASS = "#caa24a";
+    var GRASS = "#66ad4f", GRASS_D = "#57993f", GRASS_L = "#7cbc60", FOREST = "#3f6d3b";
+    var PATH = "#caa576", PATH_E = "#a67f52";
+    var FENCE = "#8a6a45", FENCE_D = "#6d5236", SOIL = "#6b4a33", SOIL_D = "#573c29", SPROUT = "#7ec850";
 
-    var groundY = 46;
     var complete = plotCount(habit) >= 9;
+
+    // 풀밭
+    p(0, 0, W, H, GRASS);
+    var seed = 1;
+    for (var g = 0; g < 64; g++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var gx = seed % W;
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var gy = 4 + (seed % (H - 6));
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      p(gx, gy, seed % 3 ? 1 : 2, 1, seed % 2 ? GRASS_D : GRASS_L);
+    }
+    // 위쪽 숲 가장자리 + 나무 몇 그루
+    p(0, 0, W, 3, FOREST);
+    for (var fx = 0; fx < W; fx += 5) p(fx, 3, 2, 1, FOREST);
+    [18, 64, 120, 158].forEach(function (tx) {
+      p(tx - 3, 0, 6, 3, LEAF_D);
+      p(tx - 2, 0, 4, 2, LEAF);
+    });
+    // 길 (가로로 살짝 굽이치게)
+    for (var px = 0; px < W; px += 2) {
+      p(px, 39 + ((px / 10) % 2 ? 1 : 0), 2, 10, PATH);
+    }
+    p(0, 39, W, 1, PATH_E);
+    // 왼쪽 아래 텃밭 + 울타리
+    p(6, 44, 22, 7, SOIL);
+    for (var sy = 45; sy < 51; sy += 2) p(6, sy, 22, 1, SOIL_D);
+    for (var cx2 = 9; cx2 < 27; cx2 += 4) {
+      for (var cy = 44; cy < 51; cy += 2) p(cx2, cy, 1, 1, SPROUT);
+    }
+    for (var ffx = 6; ffx < 30; ffx += 4) p(ffx, 43, 1, 3, FENCE_D);
+    p(6, 42, 24, 1, FENCE);
+    p(28, 42, 1, 9, FENCE_D);
 
     function structure(type, cx, by) {
       var x0;
@@ -628,12 +672,12 @@
         p(x0 + 5, by - 14, 4, 2, ROOF);
         p(x0 + 10, by - 15, 2, 3, STONE_D);
       } else if (type === "tree") {
-        x0 = cx - 6;
-        p(x0 + 5, by - 6, 2, 6, TRUNK);
-        p(x0 + 1, by - 12, 10, 7, LEAF_D);
-        p(x0 + 2, by - 14, 8, 6, LEAF);
-        p(x0 + 4, by - 15, 4, 2, LEAF);
-        p(x0 + 3, by - 12, 2, 2, LEAF_H);
+        x0 = cx - 7;
+        p(x0 + 6, by - 7, 3, 7, TRUNK);
+        p(x0, by - 14, 14, 8, LEAF_D);
+        p(x0 + 2, by - 17, 10, 6, LEAF);
+        p(x0 + 5, by - 19, 5, 2, LEAF);
+        p(x0 + 3, by - 14, 3, 3, LEAF_H);
       } else if (type === "house2") {
         x0 = cx - 9;
         p(x0 + 3, by - 9, 12, 9, WOOD_D);
@@ -642,9 +686,6 @@
         p(x0 + 12, by - 7, 2, 2, WIN);
         p(x0 + 2, by - 11, 14, 2, ROOF_D);
         p(x0 + 4, by - 14, 10, 3, ROOF);
-        p(x0, by - 3, 4, 3, "#5b4a33");
-        p(x0, by - 3, 1, 3, GRASS);
-        p(x0 + 2, by - 3, 1, 3, GRASS);
       } else if (type === "shop") {
         x0 = cx - 8;
         p(x0 + 1, by - 9, 14, 9, WOOD);
@@ -672,19 +713,45 @@
       }
     }
 
+    // 캐릭터 스프라이트를 임시 캔버스에 그려서 축소해 넣는다
+    var off = document.createElement("canvas");
+    off.width = 128;
+    off.height = 128;
+    var octx = off.getContext("2d");
+    octx.imageSmoothingEnabled = false;
+    drawCharacter(octx, tier, 4);
+
+    // 구조물 + 캐릭터를 baseline 순으로 (뒤→앞)
     var plots = plotCount(habit);
+    var items = [];
     for (var k = 0; k < plots; k++) {
-      structure(STRUCT_ORDER[k], TOWN_SLOT_X[k], groundY);
+      items.push({ t: STRUCT_ORDER[k], x: VILLAGE_POS[STRUCT_ORDER[k]][0], y: VILLAGE_POS[STRUCT_ORDER[k]][1] });
     }
+    items.push({ t: "__char__", x: VILLAGE_CHAR[0], y: VILLAGE_CHAR[1] });
+    items.sort(function (a, b) { return a.y - b.y; });
+    items.forEach(function (it) {
+      if (it.t === "__char__") {
+        var cu = 9;
+        vctx.drawImage(
+          off,
+          Math.round(it.x * S - (cu * S) / 2),
+          Math.round(it.y * S - cu * S),
+          cu * S,
+          cu * S
+        );
+      } else {
+        structure(it.t, it.x, it.y);
+      }
+    });
 
     // 어긴 자리: 돌무더기 → 7일 뒤 이끼·꽃
     var marks = habit.slipMarks.slice(-5);
     for (var m = 0; m < marks.length; m++) {
-      var mx = TOWN_FRONT_X[m];
-      var my = groundY + 4;
+      var mx = VILLAGE_FRONT_X[m];
+      var my = 50;
       var healed = daysBetween(marks[m].at, today) >= 7;
       if (healed) {
-        p(mx - 4, my - 2, 8, 2, GRASS);
+        p(mx - 4, my - 2, 8, 2, "#4f8a63");
         p(mx - 3, my - 3, 6, 2, LEAF_H);
         p(mx - 3, my - 4, 1, 1, FLOWER1);
         p(mx + 2, my - 4, 1, 1, FLOWER2);
@@ -693,7 +760,6 @@
         p(mx - 3, my - 2, 7, 2, RUBBLE_D);
         p(mx - 2, my - 4, 2, 2, RUBBLE);
         p(mx + 1, my - 3, 2, 2, RUBBLE);
-        p(mx, my - 2, 2, 1, RUBBLE);
       }
     }
   }

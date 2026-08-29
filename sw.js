@@ -1,6 +1,6 @@
 // 오프라인 캐시용 서비스워커
 // 파일을 수정하면 아래 버전을 올려서 캐시를 갱신하세요.
-var CACHE = "habit-tracker-v16";
+var CACHE = "habit-tracker-v17";
 var ASSETS = [
   "./",
   "./index.html",
@@ -9,8 +9,7 @@ var ASSETS = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png",
-  "./skyline.png"
+  "./apple-touch-icon.png"
 ];
 
 self.addEventListener("install", function (e) {

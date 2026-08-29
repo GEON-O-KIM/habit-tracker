@@ -323,26 +323,21 @@ body {
 .sd__stage {
   position: relative;
   width: 100%;
-  height: 152px;
+  height: 148px;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   overflow: hidden;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  image-rendering: pixelated;
-  background-image: url("skyline.png"),
-    linear-gradient(
-      to bottom,
-      var(--sky-top) 0%,
-      var(--sky-horizon) 88%,
-      rgba(255, 255, 255, 0.3) 88.5%,
-      var(--scene-ground) 89%,
-      var(--scene-ground) 100%
-    );
-  background-repeat: repeat-x, no-repeat;
-  background-position: center bottom 26px, center top;
-  background-size: auto 22px, auto;
+  background: linear-gradient(
+    to bottom,
+    var(--sky-top) 0%,
+    var(--sky-horizon) 84%,
+    rgba(255, 255, 255, 0.32) 84.5%,
+    var(--scene-ground) 85%,
+    var(--scene-ground) 100%
+  );
 }
 
 /* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
@@ -379,29 +374,26 @@ body {
   z-index: 0;
 }
 
-/* 기억하는 마을 — 캐릭터 뒤, 하늘 앞 */
-.sd__town {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -44px;
-  margin: 0 auto;
-  width: 420px;
+/* 기억하는 마을 — 별도 칸 (스타듀밸리 느낌) */
+.sd__village {
+  display: block;
+  width: 455px;
   max-width: 100%;
   height: auto;
+  margin: 2px auto 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-win);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  z-index: 1;
-  pointer-events: none;
 }
 
-.sd--town-built .sd__town {
+.sd--town-built .sd__village {
   animation: town-built 0.9s ease;
 }
 
 @keyframes town-built {
   0% { transform: translateY(3px); filter: brightness(1); }
-  35% { filter: brightness(1.4); }
+  35% { filter: brightness(1.35); }
   60% { transform: translateY(0); }
   100% { filter: brightness(1); }
 }
