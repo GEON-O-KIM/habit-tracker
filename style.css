@@ -330,14 +330,19 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: linear-gradient(
-    to bottom,
-    var(--sky-top) 0%,
-    var(--sky-horizon) 88%,
-    rgba(255, 255, 255, 0.3) 88.5%,
-    var(--scene-ground) 89%,
-    var(--scene-ground) 100%
-  );
+  image-rendering: pixelated;
+  background-image: url("skyline.png"),
+    linear-gradient(
+      to bottom,
+      var(--sky-top) 0%,
+      var(--sky-horizon) 88%,
+      rgba(255, 255, 255, 0.3) 88.5%,
+      var(--scene-ground) 89%,
+      var(--scene-ground) 100%
+    );
+  background-repeat: repeat-x, no-repeat;
+  background-position: center bottom 13px, center top;
+  background-size: auto 34px, auto;
 }
 
 /* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
