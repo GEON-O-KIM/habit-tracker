@@ -384,10 +384,10 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -36px;
+  bottom: -44px;
   margin: 0 auto;
-  width: 460px;
-  max-width: 108%;
+  width: 420px;
+  max-width: 100%;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
