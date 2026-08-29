@@ -18,7 +18,7 @@
   --slip: #bd574b;
   --slip-tint: #f7ece9;
 
-  --scene-ground: #2b2f4c;
+  --scene-ground: #3c4160;
 
   /* 하늘 — script.js 가 20초마다 덮어씀 (기본값 = 한낮) */
   --sky-top: #a8c1e6;
@@ -323,7 +323,7 @@ body {
 .sd__stage {
   position: relative;
   width: 100%;
-  height: 148px;
+  height: 140px;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   overflow: hidden;
@@ -333,9 +333,9 @@ body {
   background: linear-gradient(
     to bottom,
     var(--sky-top) 0%,
-    var(--sky-horizon) 84%,
-    rgba(255, 255, 255, 0.35) 84.5%,
-    var(--scene-ground) 85%,
+    var(--sky-horizon) 88%,
+    rgba(255, 255, 255, 0.3) 88.5%,
+    var(--scene-ground) 89%,
     var(--scene-ground) 100%
   );
 }
