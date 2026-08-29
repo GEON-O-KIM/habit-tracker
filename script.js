@@ -494,12 +494,11 @@
     shadow.className = "sd__shadow";
     stage.appendChild(shadow);
 
-    var GRID = 32;
-    var S = 8;
+    var S = 6;
     var canvas = document.createElement("canvas");
     canvas.className = "sd__canvas";
-    canvas.width = GRID * S;
-    canvas.height = GRID * S;
+    canvas.width = 32 * S;
+    canvas.height = 32 * S;
     var ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     drawCharacter(ctx, tier, S);
@@ -513,17 +512,21 @@
       }
     }
 
-    wrap.appendChild(stage);
-
+    // ---- 왼쪽 칸: 캐릭터 ----
+    var colL = document.createElement("div");
+    colL.className = "sd__col";
+    colL.appendChild(stage);
     var label = document.createElement("div");
     label.className = "sd__label";
     label.textContent = OUTFITS[tier].name;
-    wrap.appendChild(label);
+    colL.appendChild(label);
 
-    // 마을 칸 (스타듀밸리 느낌, 캐릭터는 작게 들어감)
-    var vW = 182;
-    var vH = 44;
-    var vS = 5;
+    // ---- 오른쪽 칸: 마을 ----
+    var colR = document.createElement("div");
+    colR.className = "sd__col";
+    var vW = 116;
+    var vH = 62;
+    var vS = 4;
     var village = document.createElement("canvas");
     village.className = "sd__village";
     village.width = vW * vS;
@@ -531,12 +534,14 @@
     var vctx = village.getContext("2d");
     vctx.imageSmoothingEnabled = false;
     drawVillage(vctx, habit, today, tier, vW, vH, vS);
-    wrap.appendChild(village);
-
+    colR.appendChild(village);
     var hint = document.createElement("div");
     hint.className = "sd__hint";
     hint.textContent = townHint(habit, today);
-    wrap.appendChild(hint);
+    colR.appendChild(hint);
+
+    wrap.appendChild(colL);
+    wrap.appendChild(colR);
 
     return wrap;
   }
@@ -557,20 +562,20 @@
     return "마을 " + plots + "/9 · 다음 건물까지 " + (thr[plots] - habit.townMax) + "일";
   }
 
-  // 마을 칸. 스타듀밸리풍 풀밭·길·밭, 구조물이 하나씩 들어서고 캐릭터는 작게 서 있다.
+  // 마을 칸 (오른쪽). 언덕 위 스타듀밸리풍 마을, 굽이진 길, 캐릭터는 작게.
   var VILLAGE_POS = {
-    belltower: [28, 25],
-    hut: [52, 28],
-    house: [80, 30],
-    house2: [106, 31],
-    shop: [136, 29],
-    tent: [158, 34],
-    well: [42, 38],
-    tree: [170, 42],
-    signpost: [118, 40]
+    belltower: [26, 24],
+    hut: [46, 28],
+    house: [30, 36],
+    shop: [74, 34],
+    house2: [54, 41],
+    tent: [94, 28],
+    well: [88, 43],
+    tree: [16, 48],
+    signpost: [66, 48]
   };
-  var VILLAGE_FRONT_X = [126, 140, 150, 160, 170];
-  var VILLAGE_CHAR = [90, 40];
+  var VILLAGE_FRONT_X = [72, 84, 94, 102, 108];
+  var VILLAGE_CHAR = [54, 54];
 
   function drawVillage(vctx, habit, today, tier, W, H, S) {
     function p(x, y, w, h, c) {
@@ -593,155 +598,156 @@
 
     var complete = plotCount(habit) >= 9;
 
-    // 풀밭
+    // 풀밭 + 뒤쪽 언덕
     p(0, 0, W, H, GRASS);
-    // 뒤쪽 언덕
-    [[26, 8, 40], [96, 7, 46], [150, 9, 40]].forEach(function (hl) {
-      p(hl[0], hl[1], hl[2], 4, GRASS_D);
-      p(hl[0] + 5, hl[1] - 2, hl[2] - 10, 2, GRASS_D);
-      p(hl[0] + 12, hl[1] - 3, hl[2] - 24, 1, GRASS_D);
+    [[6, 10, 44], [64, 9, 52]].forEach(function (hl) {
+      p(hl[0], hl[1], hl[2], 5, GRASS_D);
+      p(hl[0] + 6, hl[1] - 2, hl[2] - 12, 2, GRASS_D);
+      p(hl[0] + 14, hl[1] - 3, hl[2] - 28, 1, GRASS_D);
     });
-    // 위쪽 숲 가장자리 + 나무 몇 그루
+    // 숲 가장자리 + 나무 그림자
     p(0, 0, W, 3, FOREST);
     for (var fx = 0; fx < W; fx += 5) p(fx, 3, 2, 1, FOREST);
-    [16, 60, 116, 156].forEach(function (tx) {
+    [12, 44, 86, 110].forEach(function (tx) {
       p(tx - 3, 0, 6, 3, LEAF_D);
       p(tx - 2, 0, 4, 2, LEAF);
     });
-    // 풀밭에 흩뿌린 들꽃·풀
+    // 들꽃·풀
     var seed = 7;
-    for (var g = 0; g < 40; g++) {
+    for (var g = 0; g < 28; g++) {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
       var gx = 2 + (seed % (W - 4));
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var gy = 10 + (seed % 20);
+      var gy = 9 + (seed % 18);
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
       var pick = seed % 5;
-      if (pick === 0) p(gx, gy, 1, 1, "#f4c94c");
-      else if (pick === 1) p(gx, gy, 1, 1, "#ef7fa8");
-      else p(gx, gy, seed % 3 ? 1 : 2, 1, seed % 2 ? GRASS_D : GRASS_L);
+      if (pick === 0) p(gx, gy, 1, 1, FLOWER2);
+      else if (pick === 1) p(gx, gy, 1, 1, FLOWER1);
+      else p(gx, gy, 1, 1, seed % 2 ? GRASS_D : GRASS_L);
     }
-    // 길 (가로로 살짝 굽이치게)
-    for (var px = 0; px < W; px += 2) {
-      p(px, 32 + ((px / 10) % 2 ? 1 : 0), 2, 12, PATH);
+    // 굽이진 길 (아래 → 위쪽 종탑)
+    for (var y = 16; y < H; y++) {
+      var t = (y - 16) / (H - 16);
+      var pc = 22 + t * t * 34;
+      p(pc - 5, y, 10, 1, PATH);
+      p(pc - 6, y, 1, 1, PATH_E);
+      p(pc + 5, y, 1, 1, PATH_E);
     }
-    p(0, 32, W, 1, PATH_E);
-    // 왼쪽 아래 텃밭 + 울타리
-    p(6, 36, 22, 7, SOIL);
-    for (var sy = 37; sy < 43; sy += 2) p(6, sy, 22, 1, SOIL_D);
-    for (var cx2 = 9; cx2 < 27; cx2 += 4) {
-      for (var cy = 36; cy < 43; cy += 2) p(cx2, cy, 1, 1, SPROUT);
+    // 텃밭 + 울타리 (왼쪽 아래)
+    p(2, 48, 13, 10, SOIL);
+    for (var sy = 49; sy < 57; sy += 2) p(2, sy, 13, 1, SOIL_D);
+    for (var cx2 = 4; cx2 < 14; cx2 += 3) {
+      for (var cy = 49; cy < 57; cy += 2) p(cx2, cy - 1, 1, 1, SPROUT);
     }
-    for (var ffx = 6; ffx < 30; ffx += 4) p(ffx, 35, 1, 3, FENCE_D);
-    p(6, 34, 24, 1, FENCE);
-    p(28, 34, 1, 9, FENCE_D);
+    for (var ffx = 2; ffx < 16; ffx += 3) p(ffx, 47, 1, 3, FENCE_D);
+    p(2, 46, 15, 1, FENCE);
+    p(15, 46, 1, 12, FENCE_D);
 
     function structure(type, cx, by) {
       var x0;
       if (type === "signpost") {
         x0 = cx - 3;
-        p(x0 + 2, by - 10, 2, 10, WOOD_D);
-        p(x0, by - 10, 6, 3, WOOD);
-        p(x0, by - 10, 6, 1, OL);
-        p(x0, by - 10, 1, 3, OL);
-        p(x0 + 5, by - 10, 1, 3, OL);
+        p(x0 + 2, by - 9, 2, 9, WOOD_D);
+        p(x0, by - 9, 6, 3, WOOD);
+        p(x0, by - 9, 6, 1, OL);
+        p(x0, by - 9, 1, 3, OL);
+        p(x0 + 5, by - 9, 1, 3, OL);
       } else if (type === "tent") {
-        x0 = cx - 7;
-        p(x0 + 1, by - 3, 12, 3, TENT_D);
-        p(x0 + 2, by - 6, 10, 3, TENT);
-        p(x0 + 4, by - 8, 6, 2, TENT);
-        p(x0 + 6, by - 9, 2, 1, TENT);
-        p(x0 + 6, by - 6, 2, 6, DOOR);
-        p(x0, by - 1, 14, 1, OL);
+        x0 = cx - 6;
+        p(x0 + 1, by - 3, 10, 3, TENT_D);
+        p(x0 + 2, by - 5, 8, 2, TENT);
+        p(x0 + 4, by - 7, 4, 2, TENT);
+        p(x0 + 5, by - 5, 2, 5, DOOR);
+        p(x0, by - 1, 12, 1, OL);
       } else if (type === "hut") {
-        x0 = cx - 6;
-        p(x0 + 1, by - 6, 10, 6, WOOD);
-        p(x0 + 5, by - 4, 2, 4, DOOR);
-        p(x0 + 2, by - 5, 2, 2, WIN);
-        p(x0, by - 7, 12, 2, ROOF_D);
-        p(x0 + 2, by - 9, 8, 2, ROOF);
-        p(x0 + 4, by - 10, 4, 1, ROOF);
-      } else if (type === "well") {
-        x0 = cx - 6;
-        p(x0, by - 4, 8, 4, STONE);
-        p(x0, by - 4, 8, 1, STONE_D);
-        p(x0 + 1, by - 3, 6, 2, "#20242f");
-        p(x0 + 1, by - 10, 1, 6, WOOD_D);
-        p(x0 + 6, by - 10, 1, 6, WOOD_D);
-        p(x0, by - 12, 8, 2, ROOF_D);
-        p(x0 + 10, by - 11, 1, 11, "#3a3a48");
-        p(x0 + 9, by - 12, 3, 3, WIN);
-      } else if (type === "house") {
-        x0 = cx - 7;
-        p(x0 + 1, by - 8, 12, 8, WOOD);
-        p(x0 + 6, by - 5, 3, 5, DOOR);
-        p(x0 + 2, by - 6, 2, 2, WIN);
-        p(x0 + 10, by - 6, 2, 2, WIN);
-        p(x0, by - 9, 14, 2, ROOF_D);
-        p(x0 + 2, by - 12, 10, 3, ROOF);
-        p(x0 + 5, by - 14, 4, 2, ROOF);
-        p(x0 + 10, by - 15, 2, 3, STONE_D);
-      } else if (type === "tree") {
-        x0 = cx - 7;
-        p(x0 + 6, by - 7, 3, 7, TRUNK);
-        p(x0, by - 14, 14, 8, LEAF_D);
-        p(x0 + 2, by - 17, 10, 6, LEAF);
-        p(x0 + 5, by - 19, 5, 2, LEAF);
-        p(x0 + 3, by - 14, 3, 3, LEAF_H);
-      } else if (type === "house2") {
-        x0 = cx - 9;
-        p(x0 + 3, by - 9, 12, 9, WOOD_D);
-        p(x0 + 8, by - 5, 3, 5, DOOR);
-        p(x0 + 4, by - 7, 2, 2, WIN);
-        p(x0 + 12, by - 7, 2, 2, WIN);
-        p(x0 + 2, by - 11, 14, 2, ROOF_D);
-        p(x0 + 4, by - 14, 10, 3, ROOF);
-      } else if (type === "shop") {
-        x0 = cx - 8;
-        p(x0 + 1, by - 9, 14, 9, WOOD);
-        p(x0 + 6, by - 4, 4, 4, DOOR);
-        p(x0 + 2, by - 4, 3, 3, WIN);
-        p(x0 + 11, by - 4, 3, 3, WIN);
-        p(x0 + 1, by - 7, 14, 1, "#c9564c");
-        p(x0, by - 10, 16, 2, ROOF_D);
-        p(x0 + 2, by - 12, 12, 2, ROOF);
-        p(x0 + 6, by - 14, 4, 2, WOOD_D);
-      } else if (type === "belltower") {
         x0 = cx - 5;
-        p(x0 + 1, by - 18, 8, 18, STONE);
-        p(x0 + 1, by - 18, 8, 1, STONE_D);
-        p(x0 + 2, by - 15, 4, 4, "#20242f");
-        p(x0 + 3, by - 14, 2, 2, BRASS);
-        p(x0 + 3, by - 8, 2, 3, WIN);
-        p(x0, by - 20, 10, 2, ROOF_D);
-        p(x0 + 1, by - 23, 8, 3, ROOF);
-        p(x0 + 4, by - 25, 2, 2, ROOF_D);
+        p(x0 + 1, by - 6, 8, 6, WOOD);
+        p(x0 + 4, by - 4, 2, 4, DOOR);
+        p(x0 + 2, by - 5, 2, 2, WIN);
+        p(x0, by - 7, 10, 2, ROOF_D);
+        p(x0 + 2, by - 9, 6, 2, ROOF);
+      } else if (type === "well") {
+        x0 = cx - 5;
+        p(x0, by - 4, 7, 4, STONE);
+        p(x0, by - 4, 7, 1, STONE_D);
+        p(x0 + 1, by - 3, 5, 2, "#20242f");
+        p(x0 + 1, by - 9, 1, 5, WOOD_D);
+        p(x0 + 5, by - 9, 1, 5, WOOD_D);
+        p(x0, by - 11, 7, 2, ROOF_D);
+        p(x0 + 9, by - 10, 1, 10, "#3a3a48");
+        p(x0 + 8, by - 11, 3, 3, WIN);
+      } else if (type === "house") {
+        x0 = cx - 6;
+        p(x0 + 1, by - 8, 10, 8, WOOD);
+        p(x0 + 5, by - 5, 3, 5, DOOR);
+        p(x0 + 2, by - 6, 2, 2, WIN);
+        p(x0 + 8, by - 6, 2, 2, WIN);
+        p(x0, by - 9, 12, 2, ROOF_D);
+        p(x0 + 2, by - 12, 8, 3, ROOF);
+        p(x0 + 8, by - 14, 2, 3, STONE_D);
+      } else if (type === "tree") {
+        x0 = cx - 6;
+        p(x0 + 5, by - 6, 2, 6, TRUNK);
+        p(x0, by - 13, 12, 7, LEAF_D);
+        p(x0 + 2, by - 16, 8, 5, LEAF);
+        p(x0 + 4, by - 17, 4, 2, LEAF);
+        p(x0 + 3, by - 13, 2, 2, LEAF_H);
+      } else if (type === "house2") {
+        x0 = cx - 8;
+        p(x0 + 2, by - 9, 12, 9, WOOD_D);
+        p(x0 + 7, by - 5, 3, 5, DOOR);
+        p(x0 + 4, by - 7, 2, 2, WIN);
+        p(x0 + 11, by - 7, 2, 2, WIN);
+        p(x0 + 1, by - 11, 14, 2, ROOF_D);
+        p(x0 + 3, by - 13, 10, 2, ROOF);
+      } else if (type === "shop") {
+        x0 = cx - 7;
+        p(x0 + 1, by - 9, 12, 9, WOOD);
+        p(x0 + 5, by - 4, 4, 4, DOOR);
+        p(x0 + 2, by - 4, 2, 3, WIN);
+        p(x0 + 9, by - 4, 2, 3, WIN);
+        p(x0 + 1, by - 7, 12, 1, "#c9564c");
+        p(x0, by - 10, 14, 2, ROOF_D);
+        p(x0 + 2, by - 12, 10, 2, ROOF);
+      } else if (type === "belltower") {
+        x0 = cx - 4;
+        p(x0 + 1, by - 16, 6, 16, STONE);
+        p(x0 + 1, by - 16, 6, 1, STONE_D);
+        p(x0 + 2, by - 13, 3, 3, "#20242f");
+        p(x0 + 2, by - 12, 2, 2, BRASS);
+        p(x0 + 2, by - 7, 2, 3, WIN);
+        p(x0, by - 18, 8, 2, ROOF_D);
+        p(x0 + 1, by - 21, 6, 3, ROOF);
+        p(x0 + 3, by - 23, 2, 2, ROOF_D);
         if (complete) {
-          p(x0 + 5, by - 28, 1, 3, "#3a3a48");
-          p(x0 + 5, by - 28, 4, 2, "#e5794b");
+          p(x0 + 4, by - 26, 1, 3, "#3a3a48");
+          p(x0 + 4, by - 26, 4, 2, "#e5794b");
         }
       }
     }
 
-    // 캐릭터 스프라이트를 임시 캔버스에 그려서 축소해 넣는다
+    // 캐릭터: 임시 캔버스에 그려서 축소
     var off = document.createElement("canvas");
-    off.width = 128;
-    off.height = 128;
+    off.width = 96;
+    off.height = 96;
     var octx = off.getContext("2d");
     octx.imageSmoothingEnabled = false;
-    drawCharacter(octx, tier, 4);
+    drawCharacter(octx, tier, 3);
 
-    // 구조물 + 캐릭터를 baseline 순으로 (뒤→앞)
     var plots = plotCount(habit);
     var items = [];
     for (var k = 0; k < plots; k++) {
-      items.push({ t: STRUCT_ORDER[k], x: VILLAGE_POS[STRUCT_ORDER[k]][0], y: VILLAGE_POS[STRUCT_ORDER[k]][1] });
+      items.push({
+        t: STRUCT_ORDER[k],
+        x: VILLAGE_POS[STRUCT_ORDER[k]][0],
+        y: VILLAGE_POS[STRUCT_ORDER[k]][1]
+      });
     }
     items.push({ t: "__char__", x: VILLAGE_CHAR[0], y: VILLAGE_CHAR[1] });
     items.sort(function (a, b) { return a.y - b.y; });
     items.forEach(function (it) {
       if (it.t === "__char__") {
-        var cu = 9;
+        var cu = 11;
         vctx.drawImage(
           off,
           Math.round(it.x * S - (cu * S) / 2),
@@ -758,16 +764,15 @@
     var marks = habit.slipMarks.slice(-5);
     for (var m = 0; m < marks.length; m++) {
       var mx = VILLAGE_FRONT_X[m];
-      var my = 42;
+      var my = 52;
       var healed = daysBetween(marks[m].at, today) >= 7;
       if (healed) {
-        p(mx - 4, my - 2, 8, 2, "#4f8a63");
-        p(mx - 3, my - 3, 6, 2, LEAF_H);
-        p(mx - 3, my - 4, 1, 1, FLOWER1);
+        p(mx - 3, my - 2, 7, 2, "#4f8a63");
+        p(mx - 2, my - 3, 5, 2, LEAF_H);
+        p(mx - 2, my - 4, 1, 1, FLOWER1);
         p(mx + 2, my - 4, 1, 1, FLOWER2);
-        p(mx, my - 3, 1, 1, FLOWER1);
       } else {
-        p(mx - 3, my - 2, 7, 2, RUBBLE_D);
+        p(mx - 3, my - 2, 6, 2, RUBBLE_D);
         p(mx - 2, my - 4, 2, 2, RUBBLE);
         p(mx + 1, my - 3, 2, 2, RUBBLE);
       }

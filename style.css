@@ -315,6 +315,14 @@ body {
   order: 1;
   width: 100%;
   display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sd__col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
@@ -323,7 +331,7 @@ body {
 .sd__stage {
   position: relative;
   width: 100%;
-  height: 148px;
+  height: 122px;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   overflow: hidden;
@@ -374,13 +382,11 @@ body {
   z-index: 0;
 }
 
-/* 기억하는 마을 — 별도 칸 (스타듀밸리 느낌) */
+/* 기억하는 마을 — 오른쪽 칸 (스타듀밸리 느낌) */
 .sd__village {
   display: block;
-  width: 455px;
-  max-width: 100%;
+  width: 100%;
   height: auto;
-  margin: 2px auto 0;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   image-rendering: pixelated;
@@ -400,8 +406,8 @@ body {
 
 .sd__canvas {
   position: relative;
-  width: 128px;
-  height: 128px;
+  width: 96px;
+  height: 96px;
   margin-bottom: 3px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -410,9 +416,9 @@ body {
 
 .sd__shadow {
   position: absolute;
-  bottom: 15px;
-  width: 60px;
-  height: 9px;
+  bottom: 12px;
+  width: 46px;
+  height: 7px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   filter: blur(1.5px);
@@ -421,15 +427,17 @@ body {
 
 .sd__label {
   font-family: var(--font-pixel);
-  font-size: 13px;
-  letter-spacing: 0.03em;
+  font-size: 12px;
+  letter-spacing: 0.02em;
   color: var(--ink);
+  text-align: center;
 }
 
 .sd__hint {
   font-family: var(--font-sans);
   font-size: 11px;
   color: var(--ink-dim);
+  text-align: center;
 }
 
 .resist-box__top {
