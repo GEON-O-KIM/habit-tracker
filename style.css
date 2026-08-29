@@ -376,6 +376,34 @@ body {
   box-shadow: 0 0 16px 5px rgba(239, 159, 51, 0.35);
   transition: left 1s linear, background 1s linear;
   pointer-events: none;
+  z-index: 0;
+}
+
+/* 기억하는 마을 — 캐릭터 뒤, 하늘 앞 */
+.sd__town {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  width: 340px;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sd--town-built .sd__town {
+  animation: town-built 0.9s ease;
+}
+
+@keyframes town-built {
+  0% { transform: translateY(3px); filter: brightness(1); }
+  35% { filter: brightness(1.4); }
+  60% { transform: translateY(0); }
+  100% { filter: brightness(1); }
 }
 
 .sd__canvas {
@@ -385,7 +413,7 @@ body {
   margin-bottom: 3px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  z-index: 1;
+  z-index: 2;
 }
 
 .sd__shadow {
@@ -396,6 +424,7 @@ body {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   filter: blur(1.5px);
+  z-index: 2;
 }
 
 .sd__label {
