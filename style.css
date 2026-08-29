@@ -341,8 +341,8 @@ body {
       var(--scene-ground) 100%
     );
   background-repeat: repeat-x, no-repeat;
-  background-position: center bottom 13px, center top;
-  background-size: auto 34px, auto;
+  background-position: center bottom 26px, center top;
+  background-size: auto 22px, auto;
 }
 
 /* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
@@ -384,10 +384,10 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -8px;
+  bottom: -36px;
   margin: 0 auto;
-  width: 380px;
-  max-width: 102%;
+  width: 460px;
+  max-width: 108%;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
