@@ -1,37 +1,63 @@
 /* ============================================================
-   습관 트래커 — "하루" 테마
-   두 목소리: 픽셀 비트맵(장치가 읽어주는 숫자) + 휴먼 산세리프(사람이 쓰는 말)
-   시그니처: 캐릭터가 선 무대의 하늘이 실제 시각을 따라 흐르고 자정에 리셋된다.
+   습관 트래커 — 차분한 쿨 그레이 종이 + 파인그린(진행) + 앰버(보상)
+   카드는 3층: 항상 보이는 줄 / 인라인 편집 / 펼쳐지는 보상 서랍(캐릭터 · 카드 피라미드)
    ============================================================ */
 
 :root {
-  --paper: #e6e8f1;
-  --surface: #fbfbfe;
-  --surface-2: #eef0f7;
-  --ink: #1b1d2b;
-  --ink-dim: #6d7288;
-  --line: #d3d6e3;
+  --paper: #e8eaec;
+  --surface: #fcfcfd;
+  --surface-2: #eef0f2;
+  --ink: #1e2024;
+  --ink-dim: #6a6e77;
+  --line: #d8dadf;
 
-  --reward: #ef9f33;
-  --reward-deep: #c67d16;
-  --reward-tint: #fbe8c8;
-  --slip: #bd574b;
-  --slip-tint: #f7ece9;
+  --accent: #3f7d6e;        /* 목표 진행 */
+  --accent-tint: #e4efeb;
+  --reward: #b47a2c;        /* 옷 레벨 보상 */
+  --reward-tint: #f3e8d5;
+  --slip: #a5544a;          /* 어김 */
+  --slip-tint: #f3e7e5;
 
-  --scene-ground: #3c4160;
-
-  /* 하늘 — script.js 가 20초마다 덮어씀 (기본값 = 한낮) */
-  --sky-top: #a8c1e6;
-  --sky-horizon: #dde7f2;
-  --sun: #fff7e2;
-  --day-frac: 50%;
-
-  --font-pixel: "DotGothic16", "Apple SD Gothic Neo", ui-monospace, monospace;
   --font-sans: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
-  --r-card: 18px;
-  --r-win: 12px;
+  --r-card: 14px;
+  --r-win: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #161719;
+    --surface: #202225;
+    --surface-2: #292c30;
+    --ink: #e7e6e2;
+    --ink-dim: #969aa2;
+    --line: #33363b;
+
+    --accent: #6fae9d;
+    --accent-tint: #223530;
+    --reward: #d3a259;
+    --reward-tint: #3a2f1e;
+    --slip: #cf7d72;
+    --slip-tint: #3a2724;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #161719;
+  --surface: #202225;
+  --surface-2: #292c30;
+  --ink: #e7e6e2;
+  --ink-dim: #969aa2;
+  --line: #33363b;
+
+  --accent: #6fae9d;
+  --accent-tint: #223530;
+  --reward: #d3a259;
+  --reward-tint: #3a2f1e;
+  --slip: #cf7d72;
+  --slip-tint: #3a2724;
 }
 
 * {
@@ -48,32 +74,30 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  padding: calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+  padding: calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
     calc(56px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
 }
 
 .app {
-  max-width: 520px;
+  max-width: 460px;
   margin: 0 auto;
 }
 
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* ---------- 헤더 (스코어보드) ---------- */
+/* ---------- 헤더 ---------- */
 
 .header {
-  display: grid;
-  gap: 12px;
-  padding: 4px 2px 18px;
-  margin-bottom: 18px;
+  padding-bottom: 12px;
+  margin-bottom: 22px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -85,31 +109,24 @@ body {
 }
 
 .header__title {
-  font-family: var(--font-pixel);
-  font-weight: 400;
-  font-size: 15px;
-  letter-spacing: 0.12em;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
 .header__date {
-  font-family: var(--font-pixel);
+  font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.04em;
   color: var(--ink-dim);
   white-space: nowrap;
 }
 
 .header__summary {
-  justify-self: start;
-  font-family: var(--font-pixel);
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 12px;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-dim);
 }
 
 .header__summary:empty {
@@ -119,23 +136,23 @@ body {
 /* ---------- 습관 추가 ---------- */
 
 .add-form {
-  margin-bottom: 22px;
+  margin-bottom: 26px;
 }
 
 #habitForm {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .add-form__input {
   width: 100%;
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 14px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 11px 13px;
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -145,7 +162,7 @@ body {
 }
 
 .add-form__input:focus {
-  border-color: var(--ink);
+  border-color: var(--accent);
 }
 
 .add-form__row {
@@ -158,42 +175,40 @@ body {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  letter-spacing: 0.03em;
+  gap: 7px;
+  font-size: 13px;
   color: var(--ink-dim);
 }
 
 .add-form__number {
-  width: 62px;
-  font-family: var(--font-pixel);
+  width: 58px;
+  font-family: var(--font-mono);
   font-size: 14px;
   text-align: center;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 9px;
-  padding: 8px 6px;
+  padding: 9px 4px;
   outline: none;
   transition: border-color 0.15s ease;
 }
 
 .add-form__number:focus {
-  border-color: var(--ink);
+  border-color: var(--accent);
 }
 
 .add-form__submit {
-  font-family: var(--font-pixel);
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 13px;
-  letter-spacing: 0.06em;
   color: var(--surface);
   background: var(--ink);
   border: none;
   border-radius: 10px;
-  padding: 11px 22px;
+  padding: 10px 20px;
   cursor: pointer;
-  transition: transform 0.08s ease;
+  transition: transform 0.08s ease, opacity 0.15s ease;
 }
 
 .add-form__submit:active {
@@ -205,408 +220,119 @@ body {
 .habits {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .habit {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-card);
-  padding: 16px 16px 18px;
-  box-shadow: 0 1px 2px rgba(27, 29, 43, 0.04),
-    0 14px 30px -14px rgba(27, 29, 43, 0.16);
+  overflow: hidden;
 }
 
-/* 카드 안 배치 순서 (DOM 순서는 유지, 화면 순서만 조정) */
-.habit__head { order: 1; }
-.habit__dday { order: 2; }
-.resist-box { order: 3; }
-.progress--day { order: 4; }
-.habit__meta--day { order: 5; }
-.habit__buttons { order: 6; }
-.progress:not(.progress--day) { order: 7; }
-.habit__meta:not(.habit__meta--day) { order: 8; }
-.habit__violations { order: 9; }
+/* 상단: 항상 보이는 1차 정보 (누르면 보상 서랍 토글) */
 
-/* 헤더 줄 */
-.habit__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+.habit__top {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  grid-template-areas:
+    "ava name chip"
+    "ava bar  bar"
+    "ava meta meta";
+  column-gap: 12px;
+  row-gap: 7px;
+  align-items: center;
+  padding: 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.habit__ava {
+  grid-area: ava;
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: var(--surface-2);
+  align-self: start;
 }
 
 .habit__name {
-  font-family: var(--font-sans);
+  grid-area: name;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 15px;
   letter-spacing: -0.01em;
   line-height: 1.3;
-  color: var(--ink);
 }
 
-.habit__actions {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.icon-btn {
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  line-height: 1;
-  padding: 5px;
-  border-radius: 7px;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-/* D-day 판독 줄 */
-.habit__dday {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  font-family: var(--font-pixel);
-  font-size: 13px;
-  letter-spacing: 0.01em;
-  color: var(--ink);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 3px 9px;
-}
-
-.habit__dday .tag:first-child {
-  color: var(--surface);
-  background: var(--ink);
-  border-color: var(--ink);
-  font-size: 14px;
-}
-
-.tag--goal {
-  color: var(--ink-dim);
-}
-
-.tag--achieved {
-  color: var(--reward-deep);
-  background: var(--reward-tint);
-  border-color: #f0cd92;
-}
-
-/* ---------- 무대 (참음 캐릭터) ---------- */
-
-.resist-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 9px;
-}
-
-.sd {
-  order: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.sd__stage {
-  position: relative;
-  width: 100%;
-  height: 140px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-win);
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  image-rendering: pixelated;
-  background-image: url("skyline.png"),
-    linear-gradient(
-      to bottom,
-      var(--sky-top) 0%,
-      var(--sky-horizon) 88%,
-      rgba(255, 255, 255, 0.3) 88.5%,
-      var(--scene-ground) 89%,
-      var(--scene-ground) 100%
-    );
-  background-repeat: repeat-x, no-repeat;
-  background-position: center bottom 13px, center top;
-  background-size: auto 34px, auto;
-}
-
-/* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
-.sd__stage::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 10%;
-  width: 96px;
-  height: 74px;
-  transform: translateX(-50%);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(255, 255, 255, 0.3),
-    transparent 70%
-  );
-  pointer-events: none;
-}
-
-/* 하늘을 가로지르는 해 (자정 0% → 자정 100%) */
-.sd__stage::after {
-  content: "";
-  position: absolute;
-  left: var(--day-frac);
-  top: 60%;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, #fff, var(--sun));
-  box-shadow: 0 0 16px 5px rgba(239, 159, 51, 0.35);
-  transition: left 1s linear, background 1s linear;
-  pointer-events: none;
-}
-
-.sd__canvas {
-  position: relative;
-  width: 128px;
-  height: 128px;
-  margin-bottom: 3px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  z-index: 1;
-}
-
-.sd__shadow {
-  position: absolute;
-  bottom: 15px;
-  width: 60px;
-  height: 9px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 50%;
-  filter: blur(1.5px);
-}
-
-.sd__label {
-  font-family: var(--font-pixel);
-  font-size: 13px;
-  letter-spacing: 0.03em;
-  color: var(--ink);
-}
-
-.sd__hint {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  color: var(--ink-dim);
-}
-
-.resist-box__top {
-  order: 2;
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-}
-
-.resist-box__num {
-  display: inline-block;
-  font-family: var(--font-pixel);
-  font-size: 22px;
-  line-height: 1;
-  color: var(--reward-deep);
-}
-
-.resist-box__label {
-  font-family: var(--font-sans);
+.habit__chip {
+  grid-area: chip;
+  font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--ink-dim);
-}
-
-.resist-box__num.is-bumped {
-  animation: resist-bump 0.35s ease;
-}
-
-@keyframes resist-bump {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.18); }
-  100% { transform: scale(1); }
-}
-
-.sd__stage--bob .sd__canvas {
-  animation: sd-bob 0.5s ease;
-}
-
-@keyframes sd-bob {
-  0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-6px); }
-}
-
-.sd__stage--levelup .sd__canvas {
-  animation: sd-jump 0.6s cubic-bezier(0.3, 1.4, 0.6, 1);
-}
-
-@keyframes sd-jump {
-  0% { transform: translateY(0) scale(1); }
-  35% { transform: translateY(-16px) scale(1.06); }
-  70% { transform: translateY(0) scale(0.96); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-.sd__spark {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: var(--reward);
-  border-radius: 1px;
-  transform: rotate(45deg);
-  opacity: 0;
-  animation: sd-spark 0.7s ease forwards;
-  z-index: 2;
-}
-
-.sd__spark--0 { top: 16px; left: 62%; animation-delay: 0.02s; }
-.sd__spark--1 { top: 28px; right: 20%; animation-delay: 0.1s; }
-.sd__spark--2 { top: 66px; left: 16%; animation-delay: 0.16s; }
-.sd__spark--3 { top: 48px; right: 14%; animation-delay: 0.22s; }
-.sd__spark--4 { top: 10px; left: calc(50% - 3px); animation-delay: 0.06s; }
-
-@keyframes sd-spark {
-  0% { opacity: 0; transform: rotate(45deg) scale(0.2); }
-  40% { opacity: 1; transform: rotate(45deg) scale(1); }
-  100% { opacity: 0; transform: rotate(45deg) scale(0.4) translateY(-8px); }
-}
-
-/* ---------- 지난 7일 ---------- */
-
-.week {
-  order: 3;
-  width: 100%;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-
-.week__title {
-  font-family: var(--font-pixel);
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--ink-dim);
-  text-align: center;
-  margin-bottom: 7px;
-}
-
-.week__row {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  overflow-x: auto;
-}
-
-.week__cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  flex: 0 0 auto;
-}
-
-.week__canvas {
-  width: 32px;
-  height: 32px;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: linear-gradient(
-    to bottom,
-    #c7cfe9 0%,
-    #ecd8c6 76%,
-    #2f3350 76%
-  );
-}
-
-.week__day {
-  font-family: var(--font-pixel);
-  font-size: 10px;
-  color: var(--ink-dim);
-}
-
-/* ---------- 오늘 하루 진행바 (0시 → 24시) ---------- */
-
-.progress {
-  width: 100%;
-  height: 6px;
+  font-weight: 500;
+  color: var(--ink);
   background: var(--surface-2);
-  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.habit__chip--done {
+  color: var(--reward);
+  background: var(--reward-tint);
+}
+
+.bar {
+  grid-area: bar;
+  height: 5px;
+  background: var(--surface-2);
   border-radius: 999px;
   overflow: hidden;
 }
 
-.progress__bar {
+.bar > i {
+  display: block;
   height: 100%;
-  background: var(--ink);
+  background: var(--accent);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
 
-.progress__bar--achieved {
+.bar--done > i {
   background: var(--reward);
 }
 
-.progress--day {
-  overflow: visible;
-  position: relative;
-}
-
-.progress__bar--day {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f1dcbb, var(--reward));
-  transition: width 1s linear;
-  position: relative;
-}
-
-.progress__bar--day::after {
-  content: "";
-  position: absolute;
-  right: -2px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  margin-top: -3.5px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, #fff, var(--sun));
-  box-shadow: 0 0 7px 2px rgba(239, 159, 51, 0.4);
-}
-
 .habit__meta {
+  grid-area: meta;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  font-family: var(--font-pixel);
+  font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.03em;
   color: var(--ink-dim);
 }
 
-.habit__meta--day .day-time {
-  color: var(--ink);
+.chev {
+  display: inline-block;
+  color: var(--ink-dim);
+  transition: transform 0.2s ease;
 }
 
-/* ---------- 버튼 ---------- */
+.habit.is-open .chev {
+  transform: rotate(180deg);
+}
 
-.habit__buttons {
+/* 액션 줄 — 항상 보임 */
+
+.habit__act {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 14px;
 }
 
 .btn {
@@ -614,8 +340,8 @@ body {
   font-weight: 600;
   font-size: 14px;
   border: 1px solid transparent;
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: transform 0.08s ease, background 0.15s ease, color 0.15s ease;
 }
@@ -625,37 +351,289 @@ body {
 }
 
 .btn--resist {
-  flex: 2;
-  color: #2d1c02;
-  background: var(--reward);
-  border-color: var(--reward-deep);
+  flex: 1;
+  color: #fff;
+  background: var(--accent);
 }
 
-.btn--violate {
-  flex: 1;
+.btn--slip {
   color: var(--slip);
   background: transparent;
-  border-color: #e2b6b0;
+  border-color: color-mix(in srgb, var(--slip) 40%, transparent);
 }
 
-/* ---------- 어긴 횟수 ---------- */
-
-.habit__violations {
-  font-family: var(--font-pixel);
+.habit__count {
+  margin-left: auto;
+  font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.03em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+/* ---------- 보상 서랍 (캐릭터 · 카드 피라미드) ---------- */
+
+.habit__reward {
+  border-top: 1px solid var(--line);
+  padding: 14px;
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+}
+
+.habit.is-open .habit__reward {
+  display: grid;
+}
+
+.reward__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.reward__cap {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.box {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-win);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.box--stage {
+  height: 200px;
+  image-rendering: pixelated;
+  background: linear-gradient(
+    to bottom,
+    var(--surface-2) 0%,
+    var(--surface-2) 72%,
+    color-mix(in srgb, var(--ink) 14%, var(--surface-2)) 72%
+  );
+}
+
+.box--stage canvas {
+  width: 128px;
+  height: 128px;
+  margin-bottom: 8px;
+  image-rendering: pixelated;
+}
+
+.box--tower {
+  height: 200px;
+  align-items: center;
+  background: radial-gradient(
+    ellipse at 50% 120%,
+    color-mix(in srgb, var(--accent) 12%, var(--surface)),
+    var(--surface) 70%
+  );
+}
+
+.box--tower canvas {
+  height: 96%;
+  width: auto;
+}
+
+.reward__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.reward__hint {
+  font-size: 10px;
   color: var(--ink-dim);
   text-align: center;
+  line-height: 1.4;
+}
+
+/* 참음 반응 */
+
+.box--stage canvas.is-bump,
+.reward__cap.is-bump {
+  animation: char-bump 0.32s ease;
+}
+
+.box--stage canvas.is-levelup {
+  animation: char-jump 0.55s cubic-bezier(0.3, 1.4, 0.6, 1);
+}
+
+@keyframes char-bump {
+  45% { transform: scale(1.12); }
+}
+
+@keyframes char-jump {
+  35% { transform: translateY(-12px) scale(1.05); }
+  70% { transform: translateY(0) scale(0.97); }
+}
+
+/* 어김 → 피라미드가 무너지는 순간 강조 */
+
+.habit.is-broken {
+  animation: brk-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.habit.is-broken .box--tower {
+  border-color: var(--slip);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--slip) 45%, transparent);
+}
+
+.box--stage.is-stumble canvas {
+  animation: stumble 0.5s ease;
+}
+
+@keyframes stumble {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  30% { transform: rotate(-8deg) translateY(2px); }
+  60% { transform: rotate(5deg); }
+}
+
+@keyframes brk-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+
+/* 서랍 하단 — 조용한 수정 / 삭제 */
+
+.reward__edit {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.reward__edit button {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color 0.15s ease;
+}
+
+.reward__edit-del:hover {
+  color: var(--slip);
+}
+
+/* ---------- 인라인 편집 패널 ---------- */
+
+.habit.is-editing .habit__top,
+.habit.is-editing .habit__act,
+.habit.is-editing .habit__reward {
+  display: none;
+}
+
+.habit__edit {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.habit.is-editing .habit__edit {
+  display: flex;
+}
+
+.habit__edit-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.habit__edit-field {
+  flex: 1;
+}
+
+.habit__edit-field:last-child {
+  flex: 0 0 auto;
+}
+
+.habit__edit label {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+.habit__edit input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.habit__edit input:focus {
+  border-color: var(--accent);
+}
+
+.habit__edit .e-goal {
+  width: 74px;
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.habit__edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.habit__edit .e-save {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.habit__edit .e-cancel {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
 }
 
 /* ---------- 빈 상태 / 푸터 ---------- */
 
 .empty {
   text-align: center;
-  font-family: var(--font-sans);
   font-size: 14px;
   color: var(--ink-dim);
-  padding: 38px 18px;
+  padding: 36px 18px;
   border: 1px dashed var(--line);
   border-radius: var(--r-card);
 }
@@ -665,62 +643,32 @@ body {
 }
 
 .footer {
-  margin-top: 26px;
+  margin-top: 28px;
   text-align: center;
 }
 
 .footer__reset {
-  font-family: var(--font-pixel);
+  font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--ink-dim);
-  background: transparent;
+  background: none;
   border: none;
   padding: 6px 10px;
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
-/* ---------- hover (마우스 있는 기기만) ---------- */
+/* ---------- hover (마우스 있는 기기) ---------- */
 
 @media (hover: hover) {
-  .icon-btn:hover {
-    opacity: 1;
-    background: var(--surface-2);
-  }
-  .add-form__submit:hover {
-    background: #33374a;
-  }
-  .btn--resist:hover {
-    background: var(--reward-deep);
-    color: #fff;
-  }
-  .btn--violate:hover {
-    background: var(--slip-tint);
-  }
-  .footer__reset:hover {
-    color: var(--slip);
-  }
+  .add-form__submit:hover { opacity: 0.9; }
+  .btn--resist:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+  .btn--slip:hover { background: var(--slip-tint); }
+  .footer__reset:hover { color: var(--slip); }
 }
 
-/* ---------- 등장 애니메이션 ---------- */
-
-@media (prefers-reduced-motion: no-preference) {
-  .habit {
-    animation: card-rise 0.45s ease both;
-  }
-  .habit:nth-child(2) { animation-delay: 0.05s; }
-  .habit:nth-child(3) { animation-delay: 0.1s; }
-  .habit:nth-child(4) { animation-delay: 0.15s; }
-  .habit:nth-child(n + 5) { animation-delay: 0.2s; }
-
-  @keyframes card-rise {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-  }
-}
+/* ---------- 모션 줄이기 ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -728,8 +676,5 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-  .sd__spark {
-    display: none;
   }
 }
