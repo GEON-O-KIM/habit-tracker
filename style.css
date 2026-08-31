@@ -315,14 +315,6 @@ body {
   order: 1;
   width: 100%;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.sd__col {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
@@ -331,21 +323,26 @@ body {
 .sd__stage {
   position: relative;
   width: 100%;
-  height: 122px;
+  height: 140px;
   border: 1px solid var(--line);
   border-radius: var(--r-win);
   overflow: hidden;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: linear-gradient(
-    to bottom,
-    var(--sky-top) 0%,
-    var(--sky-horizon) 84%,
-    rgba(255, 255, 255, 0.32) 84.5%,
-    var(--scene-ground) 85%,
-    var(--scene-ground) 100%
-  );
+  image-rendering: pixelated;
+  background-image: url("skyline.png"),
+    linear-gradient(
+      to bottom,
+      var(--sky-top) 0%,
+      var(--sky-horizon) 88%,
+      rgba(255, 255, 255, 0.3) 88.5%,
+      var(--scene-ground) 89%,
+      var(--scene-ground) 100%
+    );
+  background-repeat: repeat-x, no-repeat;
+  background-position: center bottom 13px, center top;
+  background-size: auto 34px, auto;
 }
 
 /* 캐릭터를 어떤 하늘에서도 읽히게 하는 은은한 빛 */
@@ -379,65 +376,39 @@ body {
   box-shadow: 0 0 16px 5px rgba(239, 159, 51, 0.35);
   transition: left 1s linear, background 1s linear;
   pointer-events: none;
-  z-index: 0;
-}
-
-/* 기억하는 마을 — 오른쪽 칸 (스타듀밸리 느낌) */
-.sd__village {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--r-win);
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.sd--town-built .sd__village {
-  animation: town-built 0.9s ease;
-}
-
-@keyframes town-built {
-  0% { transform: translateY(3px); filter: brightness(1); }
-  35% { filter: brightness(1.35); }
-  60% { transform: translateY(0); }
-  100% { filter: brightness(1); }
 }
 
 .sd__canvas {
   position: relative;
-  width: 112px;
-  height: 112px;
-  margin-bottom: 2px;
+  width: 128px;
+  height: 128px;
+  margin-bottom: 3px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  z-index: 2;
+  z-index: 1;
 }
 
 .sd__shadow {
   position: absolute;
-  bottom: 11px;
-  width: 52px;
-  height: 8px;
+  bottom: 15px;
+  width: 60px;
+  height: 9px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   filter: blur(1.5px);
-  z-index: 2;
 }
 
 .sd__label {
   font-family: var(--font-pixel);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  letter-spacing: 0.03em;
   color: var(--ink);
-  text-align: center;
 }
 
 .sd__hint {
   font-family: var(--font-sans);
   font-size: 11px;
   color: var(--ink-dim);
-  text-align: center;
 }
 
 .resist-box__top {

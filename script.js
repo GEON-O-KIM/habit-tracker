@@ -137,86 +137,7 @@
     if (typeof h.violationCount !== "number") h.violationCount = 0;
     if (!h.resistDate) h.resistDate = todayKey();
     if (!Array.isArray(h.resistHistory)) h.resistHistory = [];
-    // 마을: townMax = 지금까지 도달한 최고 연속일, townShown = 지어진 걸 본 개수
-    if (typeof h.townMax !== "number") {
-      h.townMax = daysBetween(h.streakStartDate, todayKey()) + 1;
-    }
-    if (typeof h.townShown !== "number") h.townShown = -1; // -1 = 첫 렌더에서 조용히 맞춤
-    if (!Array.isArray(h.slipMarks)) h.slipMarks = [];
   });
-
-  var justBuiltTown = {}; // { habitId: 방금 지어진 구조물 이름 }
-
-  /* ---------- 기억하는 마을 ---------- */
-
-  var STRUCT_ORDER = [
-    "signpost",
-    "tent",
-    "hut",
-    "well",
-    "house",
-    "tree",
-    "house2",
-    "shop",
-    "belltower"
-  ];
-  var STRUCT_KR = {
-    signpost: "이정표",
-    tent: "천막",
-    hut: "오두막",
-    well: "우물",
-    house: "집",
-    tree: "나무",
-    house2: "두 번째 집",
-    shop: "가게",
-    belltower: "종탑"
-  };
-
-  // 9칸의 잠금 해제 일수 (목표 일수에 비례, 초반이 촘촘하게, 9번째 = 목표일)
-  function townThresholds(goalDays) {
-    var t = [];
-    for (var k = 1; k <= 9; k++) {
-      var v = Math.round(goalDays * Math.pow(k / 9, 1.6));
-      v = Math.max(k, v);
-      if (k > 1) v = Math.max(v, t[k - 2] + 1);
-      t.push(v);
-    }
-    t[8] = Math.max(goalDays, t[7] + 1);
-    return t;
-  }
-
-  function plotCount(habit) {
-    var thr = townThresholds(habit.goalDays);
-    var n = 0;
-    for (var i = 0; i < thr.length; i++) {
-      if (habit.townMax >= thr[i]) n++;
-    }
-    return n;
-  }
-
-  // 렌더 전에 townMax 갱신 + 새로 지어진 구조물 표시
-  function syncTowns() {
-    var today = todayKey();
-    var changed = false;
-    justBuiltTown = {};
-    habits.forEach(function (h) {
-      var dn = daysBetween(h.streakStartDate, today) + 1;
-      if (dn > h.townMax) {
-        h.townMax = dn;
-        changed = true;
-      }
-      var plots = plotCount(h);
-      if (h.townShown < 0) {
-        h.townShown = plots; // 최초 1회: 조용히 맞춤
-        changed = true;
-      } else if (plots > h.townShown) {
-        justBuiltTown[h.id] = STRUCT_ORDER[plots - 1];
-        h.townShown = plots;
-        changed = true;
-      }
-    });
-    if (changed) saveHabits(habits);
-  }
 
   // 참음 카운트는 하루 단위. 자정을 넘겼으면 그날의 마무리 상태를 기록에 남기고 0으로 리셋.
   function rolloverResist() {
@@ -256,7 +177,6 @@
 
   function render() {
     rolloverResist();
-    syncTowns();
     var today = todayKey();
     listEl.innerHTML = "";
 
@@ -432,7 +352,7 @@
 
     resistBox.appendChild(resistTop);
     resistBox.appendChild(
-      buildResistCharacter(habit, today, habit.id === justResistedId)
+      buildResistCharacter(habit.resistCount, habit.id === justResistedId)
     );
     if (habit.resistHistory.length > 0) {
       resistBox.appendChild(buildWeekStrip(habit.resistHistory));
@@ -474,11 +394,9 @@
   ];
   var MAX_TIER = OUTFITS.length - 1;
 
-  function buildResistCharacter(habit, today, animateLast) {
-    var count = habit.resistCount;
+  function buildResistCharacter(count, animateLast) {
     var wrap = document.createElement("div");
     wrap.className = "sd";
-    if (justBuiltTown[habit.id]) wrap.classList.add("sd--town-built");
 
     var tier = Math.min(count, MAX_TIER);
     var prevTier = Math.min(Math.max(count - 1, 0), MAX_TIER);
@@ -494,11 +412,12 @@
     shadow.className = "sd__shadow";
     stage.appendChild(shadow);
 
-    var S = 7;
+    var GRID = 32;
+    var S = 8;
     var canvas = document.createElement("canvas");
     canvas.className = "sd__canvas";
-    canvas.width = 32 * S;
-    canvas.height = 32 * S;
+    canvas.width = GRID * S;
+    canvas.height = GRID * S;
     var ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     drawCharacter(ctx, tier, S);
@@ -512,271 +431,20 @@
       }
     }
 
-    // ---- 왼쪽 칸: 캐릭터 ----
-    var colL = document.createElement("div");
-    colL.className = "sd__col";
-    colL.appendChild(stage);
+    wrap.appendChild(stage);
+
     var label = document.createElement("div");
     label.className = "sd__label";
     label.textContent = OUTFITS[tier].name;
-    colL.appendChild(label);
+    wrap.appendChild(label);
 
-    // ---- 오른쪽 칸: 마을 ----
-    var colR = document.createElement("div");
-    colR.className = "sd__col";
-    var vW = 116;
-    var vH = 62;
-    var vS = 4;
-    var village = document.createElement("canvas");
-    village.className = "sd__village";
-    village.width = vW * vS;
-    village.height = vH * vS;
-    var vctx = village.getContext("2d");
-    vctx.imageSmoothingEnabled = false;
-    drawVillage(vctx, habit, today, tier, vW, vH, vS);
-    colR.appendChild(village);
     var hint = document.createElement("div");
     hint.className = "sd__hint";
-    hint.textContent = townHint(habit, today);
-    colR.appendChild(hint);
-
-    wrap.appendChild(colL);
-    wrap.appendChild(colR);
+    hint.textContent =
+      tier < MAX_TIER ? "한 번 더 참으면 새 옷!" : "최고의 옷을 완성했어요!";
+    wrap.appendChild(hint);
 
     return wrap;
-  }
-
-  function townHint(habit, today) {
-    if (justBuiltTown[habit.id]) {
-      return "새 건물 — " + STRUCT_KR[justBuiltTown[habit.id]];
-    }
-    var plots = plotCount(habit);
-    if (plots >= 9) return "🎏 마을 완공!";
-
-    var dn = daysBetween(habit.streakStartDate, today) + 1;
-    if (dn < habit.townMax) {
-      // 어김 후 회복 중 — 예전 규모를 되찾아야 새 건물
-      return "예전 마을까지 " + (habit.townMax - dn + 1) + "일";
-    }
-    var thr = townThresholds(habit.goalDays);
-    return "마을 " + plots + "/9 · 다음 건물까지 " + (thr[plots] - habit.townMax) + "일";
-  }
-
-  // 마을 칸 (오른쪽). 언덕 위 스타듀밸리풍 마을, 굽이진 길, 캐릭터는 작게.
-  var VILLAGE_POS = {
-    belltower: [26, 24],
-    hut: [46, 28],
-    house: [30, 36],
-    shop: [74, 34],
-    house2: [54, 41],
-    tent: [94, 28],
-    well: [88, 43],
-    tree: [16, 48],
-    signpost: [66, 48]
-  };
-  var VILLAGE_FRONT_X = [72, 84, 94, 102, 108];
-  var VILLAGE_CHAR = [54, 54];
-
-  function drawVillage(vctx, habit, today, tier, W, H, S) {
-    function p(x, y, w, h, c) {
-      vctx.fillStyle = c;
-      vctx.fillRect(Math.round(x * S), Math.round(y * S), Math.round(w * S), Math.round(h * S));
-    }
-
-    var OL = "#241f30";
-    var WOOD = "#8a5a3c", WOOD_D = "#6b4229";
-    var ROOF = "#8a4040", ROOF_D = "#682e2e";
-    var STONE = "#63637a", STONE_D = "#4b4b60";
-    var WIN = "#f4cd72", DOOR = "#3a281c";
-    var TRUNK = "#5f4433", LEAF = "#4a8a63", LEAF_D = "#3a6e4e", LEAF_H = "#5fa078";
-    var TENT = "#c9b487", TENT_D = "#a68f63";
-    var RUBBLE = "#83859a", RUBBLE_D = "#5c5e6c";
-    var FLOWER1 = "#ef7fa8", FLOWER2 = "#f4c94c", BRASS = "#caa24a";
-    var GRASS = "#66ad4f", GRASS_D = "#57993f", GRASS_L = "#7cbc60", FOREST = "#3f6d3b";
-    var PATH = "#caa576", PATH_E = "#a67f52";
-    var FENCE = "#8a6a45", FENCE_D = "#6d5236", SOIL = "#6b4a33", SOIL_D = "#573c29", SPROUT = "#7ec850";
-
-    var complete = plotCount(habit) >= 9;
-
-    // 풀밭 + 뒤쪽 언덕
-    p(0, 0, W, H, GRASS);
-    [[6, 10, 44], [64, 9, 52]].forEach(function (hl) {
-      p(hl[0], hl[1], hl[2], 5, GRASS_D);
-      p(hl[0] + 6, hl[1] - 2, hl[2] - 12, 2, GRASS_D);
-      p(hl[0] + 14, hl[1] - 3, hl[2] - 28, 1, GRASS_D);
-    });
-    // 숲 가장자리 + 나무 그림자
-    p(0, 0, W, 3, FOREST);
-    for (var fx = 0; fx < W; fx += 5) p(fx, 3, 2, 1, FOREST);
-    [12, 44, 86, 110].forEach(function (tx) {
-      p(tx - 3, 0, 6, 3, LEAF_D);
-      p(tx - 2, 0, 4, 2, LEAF);
-    });
-    // 들꽃·풀
-    var seed = 7;
-    for (var g = 0; g < 28; g++) {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var gx = 2 + (seed % (W - 4));
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var gy = 9 + (seed % 18);
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      var pick = seed % 5;
-      if (pick === 0) p(gx, gy, 1, 1, FLOWER2);
-      else if (pick === 1) p(gx, gy, 1, 1, FLOWER1);
-      else p(gx, gy, 1, 1, seed % 2 ? GRASS_D : GRASS_L);
-    }
-    // 굽이진 길 (아래 → 위쪽 종탑)
-    for (var y = 16; y < H; y++) {
-      var t = (y - 16) / (H - 16);
-      var pc = 22 + t * t * 34;
-      p(pc - 5, y, 10, 1, PATH);
-      p(pc - 6, y, 1, 1, PATH_E);
-      p(pc + 5, y, 1, 1, PATH_E);
-    }
-    // 텃밭 + 울타리 (왼쪽 아래)
-    p(2, 48, 13, 10, SOIL);
-    for (var sy = 49; sy < 57; sy += 2) p(2, sy, 13, 1, SOIL_D);
-    for (var cx2 = 4; cx2 < 14; cx2 += 3) {
-      for (var cy = 49; cy < 57; cy += 2) p(cx2, cy - 1, 1, 1, SPROUT);
-    }
-    for (var ffx = 2; ffx < 16; ffx += 3) p(ffx, 47, 1, 3, FENCE_D);
-    p(2, 46, 15, 1, FENCE);
-    p(15, 46, 1, 12, FENCE_D);
-
-    function structure(type, cx, by) {
-      var x0;
-      if (type === "signpost") {
-        x0 = cx - 3;
-        p(x0 + 2, by - 9, 2, 9, WOOD_D);
-        p(x0, by - 9, 6, 3, WOOD);
-        p(x0, by - 9, 6, 1, OL);
-        p(x0, by - 9, 1, 3, OL);
-        p(x0 + 5, by - 9, 1, 3, OL);
-      } else if (type === "tent") {
-        x0 = cx - 6;
-        p(x0 + 1, by - 3, 10, 3, TENT_D);
-        p(x0 + 2, by - 5, 8, 2, TENT);
-        p(x0 + 4, by - 7, 4, 2, TENT);
-        p(x0 + 5, by - 5, 2, 5, DOOR);
-        p(x0, by - 1, 12, 1, OL);
-      } else if (type === "hut") {
-        x0 = cx - 5;
-        p(x0 + 1, by - 6, 8, 6, WOOD);
-        p(x0 + 4, by - 4, 2, 4, DOOR);
-        p(x0 + 2, by - 5, 2, 2, WIN);
-        p(x0, by - 7, 10, 2, ROOF_D);
-        p(x0 + 2, by - 9, 6, 2, ROOF);
-      } else if (type === "well") {
-        x0 = cx - 5;
-        p(x0, by - 4, 7, 4, STONE);
-        p(x0, by - 4, 7, 1, STONE_D);
-        p(x0 + 1, by - 3, 5, 2, "#20242f");
-        p(x0 + 1, by - 9, 1, 5, WOOD_D);
-        p(x0 + 5, by - 9, 1, 5, WOOD_D);
-        p(x0, by - 11, 7, 2, ROOF_D);
-        p(x0 + 9, by - 10, 1, 10, "#3a3a48");
-        p(x0 + 8, by - 11, 3, 3, WIN);
-      } else if (type === "house") {
-        x0 = cx - 6;
-        p(x0 + 1, by - 8, 10, 8, WOOD);
-        p(x0 + 5, by - 5, 3, 5, DOOR);
-        p(x0 + 2, by - 6, 2, 2, WIN);
-        p(x0 + 8, by - 6, 2, 2, WIN);
-        p(x0, by - 9, 12, 2, ROOF_D);
-        p(x0 + 2, by - 12, 8, 3, ROOF);
-        p(x0 + 8, by - 14, 2, 3, STONE_D);
-      } else if (type === "tree") {
-        x0 = cx - 6;
-        p(x0 + 5, by - 6, 2, 6, TRUNK);
-        p(x0, by - 13, 12, 7, LEAF_D);
-        p(x0 + 2, by - 16, 8, 5, LEAF);
-        p(x0 + 4, by - 17, 4, 2, LEAF);
-        p(x0 + 3, by - 13, 2, 2, LEAF_H);
-      } else if (type === "house2") {
-        x0 = cx - 8;
-        p(x0 + 2, by - 9, 12, 9, WOOD_D);
-        p(x0 + 7, by - 5, 3, 5, DOOR);
-        p(x0 + 4, by - 7, 2, 2, WIN);
-        p(x0 + 11, by - 7, 2, 2, WIN);
-        p(x0 + 1, by - 11, 14, 2, ROOF_D);
-        p(x0 + 3, by - 13, 10, 2, ROOF);
-      } else if (type === "shop") {
-        x0 = cx - 7;
-        p(x0 + 1, by - 9, 12, 9, WOOD);
-        p(x0 + 5, by - 4, 4, 4, DOOR);
-        p(x0 + 2, by - 4, 2, 3, WIN);
-        p(x0 + 9, by - 4, 2, 3, WIN);
-        p(x0 + 1, by - 7, 12, 1, "#c9564c");
-        p(x0, by - 10, 14, 2, ROOF_D);
-        p(x0 + 2, by - 12, 10, 2, ROOF);
-      } else if (type === "belltower") {
-        x0 = cx - 4;
-        p(x0 + 1, by - 16, 6, 16, STONE);
-        p(x0 + 1, by - 16, 6, 1, STONE_D);
-        p(x0 + 2, by - 13, 3, 3, "#20242f");
-        p(x0 + 2, by - 12, 2, 2, BRASS);
-        p(x0 + 2, by - 7, 2, 3, WIN);
-        p(x0, by - 18, 8, 2, ROOF_D);
-        p(x0 + 1, by - 21, 6, 3, ROOF);
-        p(x0 + 3, by - 23, 2, 2, ROOF_D);
-        if (complete) {
-          p(x0 + 4, by - 26, 1, 3, "#3a3a48");
-          p(x0 + 4, by - 26, 4, 2, "#e5794b");
-        }
-      }
-    }
-
-    // 캐릭터: 임시 캔버스에 그려서 축소
-    var off = document.createElement("canvas");
-    off.width = 96;
-    off.height = 96;
-    var octx = off.getContext("2d");
-    octx.imageSmoothingEnabled = false;
-    drawCharacter(octx, tier, 3);
-
-    var plots = plotCount(habit);
-    var items = [];
-    for (var k = 0; k < plots; k++) {
-      items.push({
-        t: STRUCT_ORDER[k],
-        x: VILLAGE_POS[STRUCT_ORDER[k]][0],
-        y: VILLAGE_POS[STRUCT_ORDER[k]][1]
-      });
-    }
-    items.push({ t: "__char__", x: VILLAGE_CHAR[0], y: VILLAGE_CHAR[1] });
-    items.sort(function (a, b) { return a.y - b.y; });
-    items.forEach(function (it) {
-      if (it.t === "__char__") {
-        var cu = 11;
-        vctx.drawImage(
-          off,
-          Math.round(it.x * S - (cu * S) / 2),
-          Math.round(it.y * S - cu * S),
-          cu * S,
-          cu * S
-        );
-      } else {
-        structure(it.t, it.x, it.y);
-      }
-    });
-
-    // 어긴 자리: 돌무더기 → 7일 뒤 이끼·꽃
-    var marks = habit.slipMarks.slice(-5);
-    for (var m = 0; m < marks.length; m++) {
-      var mx = VILLAGE_FRONT_X[m];
-      var my = 52;
-      var healed = daysBetween(marks[m].at, today) >= 7;
-      if (healed) {
-        p(mx - 3, my - 2, 7, 2, "#4f8a63");
-        p(mx - 2, my - 3, 5, 2, LEAF_H);
-        p(mx - 2, my - 4, 1, 1, FLOWER1);
-        p(mx + 2, my - 4, 1, 1, FLOWER2);
-      } else {
-        p(mx - 3, my - 2, 6, 2, RUBBLE_D);
-        p(mx - 2, my - 4, 2, 2, RUBBLE);
-        p(mx + 1, my - 3, 2, 2, RUBBLE);
-      }
-    }
   }
 
   // 최근 7일, 하루를 마무리한 캐릭터 상태를 작게 나열
@@ -969,9 +637,6 @@
       resistCount: 0,
       resistDate: todayKey(),
       resistHistory: [],
-      townMax: 1,
-      townShown: 0,
-      slipMarks: [],
       createdAt: todayKey()
     });
     saveHabits(habits);
@@ -1024,9 +689,6 @@
     habit.violationCount += 1;
     habit.streakStartDate = todayKey(); // D-day 즉시 초기화
     habit.resistCount = 0; // 참음 캐릭터도 초기화 (오늘 마무리 상태는 자정에 기록됨)
-    // 마을엔 돌무더기가 남는다 (7일 뒤 이끼·꽃으로). townMax 는 그대로 두어 건물은 유지.
-    habit.slipMarks.push({ at: todayKey() });
-    if (habit.slipMarks.length > 8) habit.slipMarks.shift();
     saveHabits(habits);
     render();
   }
