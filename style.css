@@ -224,10 +224,56 @@ body {
 }
 
 .habit {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-card);
   overflow: hidden;
+}
+
+/* 순서 바꾸기 손잡이 */
+
+.habit__grip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+  background: none;
+  border: none;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  z-index: 3;
+}
+
+.habit__grip:active {
+  cursor: grabbing;
+}
+
+.habit.is-editing .habit__grip {
+  display: none;
+}
+
+.habit.is-dragging {
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+  border-color: var(--accent);
+}
+
+.habit--placeholder {
+  border: 1px dashed var(--accent);
+  border-radius: var(--r-card);
+  background: var(--accent-tint);
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .habit__grip:hover { color: var(--ink); }
 }
 
 /* 상단: 항상 보이는 1차 정보 (누르면 보상 서랍 토글) */
@@ -243,7 +289,7 @@ body {
   column-gap: 12px;
   row-gap: 7px;
   align-items: center;
-  padding: 14px;
+  padding: 14px 42px 14px 14px;
   background: none;
   border: none;
   text-align: left;

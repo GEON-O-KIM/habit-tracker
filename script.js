@@ -59,6 +59,7 @@
   var justResistedId = null; // 방금 "참음"을 누른 습관 (반응 애니메이션용)
   var justLeveledUp = false;
   var openIds = {}; // 펼쳐 놓은 카드 (세션 한정, 저장 안 함)
+  var dragState = null; // 카드 순서 바꾸기 진행 상태
 
   // 예전 데이터 호환
   habits.forEach(function (h) {
@@ -491,6 +492,107 @@
   }
 
   /* ============================================================
+     카드 순서 바꾸기 (손잡이를 잡고 위아래 드래그)
+     ============================================================ */
+
+  function attachDrag(handle, card) {
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.button != null && e.button > 0) return;
+      var startY = e.clientY;
+      var startX = e.clientX;
+      var started = false;
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch (err) {}
+
+      function move(ev) {
+        if (!started) {
+          if (Math.abs(ev.clientY - startY) < 4 && Math.abs(ev.clientX - startX) < 4) {
+            return;
+          }
+          started = true;
+          beginDrag(card, ev);
+        }
+        ev.preventDefault();
+        dragMove(ev);
+      }
+      function end() {
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", end);
+        handle.removeEventListener("pointercancel", end);
+        if (started) dragEnd();
+      }
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", end);
+      handle.addEventListener("pointercancel", end);
+    });
+  }
+
+  function beginDrag(card, e) {
+    var rect = card.getBoundingClientRect();
+    var ph = document.createElement("div");
+    ph.className = "habit--placeholder";
+    ph.style.height = rect.height + "px";
+
+    card.style.width = rect.width + "px";
+    card.style.position = "fixed";
+    card.style.left = rect.left + "px";
+    card.style.top = rect.top + "px";
+    card.style.margin = "0";
+    card.style.zIndex = "999";
+    card.style.pointerEvents = "none";
+    card.classList.add("is-dragging");
+
+    listEl.insertBefore(ph, card.nextSibling);
+    dragState = { card: card, ph: ph, grabY: e.clientY - rect.top };
+    document.body.style.userSelect = "none";
+  }
+
+  function dragMove(e) {
+    var ds = dragState;
+    if (!ds) return;
+    ds.card.style.top = e.clientY - ds.grabY + "px";
+
+    var others = Array.prototype.slice.call(
+      listEl.querySelectorAll(".habit:not(.is-dragging)")
+    );
+    var target = null;
+    for (var i = 0; i < others.length; i++) {
+      var r = others[i].getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) {
+        target = others[i];
+        break;
+      }
+    }
+    if (target) listEl.insertBefore(ds.ph, target);
+    else listEl.appendChild(ds.ph);
+
+    var pad = 64;
+    if (e.clientY < pad) window.scrollBy(0, -12);
+    else if (e.clientY > window.innerHeight - pad) window.scrollBy(0, 12);
+  }
+
+  function dragEnd() {
+    var ds = dragState;
+    if (!ds) return;
+    dragState = null;
+    document.body.style.userSelect = "";
+
+    listEl.insertBefore(ds.card, ds.ph);
+    listEl.removeChild(ds.ph);
+    ds.card.classList.remove("is-dragging");
+    ds.card.style.cssText = "";
+
+    var order = Array.prototype.slice.call(listEl.children).map(function (c) {
+      return c.getAttribute("data-id");
+    });
+    habits.sort(function (a, b) {
+      return order.indexOf(a.id) - order.indexOf(b.id);
+    });
+    saveHabits(habits);
+  }
+
+  /* ============================================================
      렌더
      ============================================================ */
 
@@ -528,6 +630,7 @@
 
     var card = document.createElement("div");
     card.className = "habit";
+    card.setAttribute("data-id", habit.id);
     if (openIds[habit.id]) card.classList.add("is-open");
 
     /* ---- 상단 (누르면 서랍 토글) ---- */
@@ -715,6 +818,24 @@
     card.appendChild(editPanel);
     card.appendChild(act);
     card.appendChild(reward);
+
+    if (habits.length > 1) {
+      var grip = document.createElement("button");
+      grip.type = "button";
+      grip.className = "habit__grip";
+      grip.setAttribute("aria-label", "드래그해서 순서 변경");
+      grip.title = "드래그해서 순서 변경";
+      grip.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">' +
+        '<g fill="currentColor">' +
+        '<circle cx="5" cy="3" r="1.3"/><circle cx="9" cy="3" r="1.3"/>' +
+        '<circle cx="5" cy="7" r="1.3"/><circle cx="9" cy="7" r="1.3"/>' +
+        '<circle cx="5" cy="11" r="1.3"/><circle cx="9" cy="11" r="1.3"/>' +
+        "</g></svg>";
+      attachDrag(grip, card);
+      card.appendChild(grip);
+    }
+
     return card;
   }
 
