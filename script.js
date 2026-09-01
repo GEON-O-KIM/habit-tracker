@@ -1041,7 +1041,7 @@
     resistBtn.className = "btn btn--resist";
     resistBtn.textContent = "참음";
     resistBtn.addEventListener("click", function () {
-      resistHabit(habit.id);
+      openPause(habit.id);
     });
 
     var violateBtn = document.createElement("button");
@@ -1258,6 +1258,85 @@
     saveHabits(habits);
     render();
   }
+
+  /* ============================================================
+     참음 전 10초 멈춤 — 충동이 가라앉을 시간을 강제로 둔다
+     10초를 버텨야 "참음"으로 기록된다. 취소하면 아무것도 안 남는다.
+     ============================================================ */
+
+  var PAUSE_SECONDS = 10;
+  var pauseEl = document.getElementById("pauseOverlay");
+  var pauseNumEl = document.getElementById("pauseNum");
+  var pauseBarEl = document.getElementById("pauseBar");
+  var pauseDoneEl = document.getElementById("pauseDone");
+  var pauseStopEl = document.getElementById("pauseStop");
+  var pauseTimer = null;
+  var pauseHabitId = null;
+  var pauseLastFocus = null;
+
+  function openPause(id) {
+    if (pauseTimer) clearInterval(pauseTimer);
+    pauseHabitId = id;
+    pauseLastFocus = document.activeElement;
+
+    var left = PAUSE_SECONDS;
+    pauseNumEl.textContent = left;
+    pauseDoneEl.disabled = true;
+    pauseDoneEl.textContent = left + "초";
+
+    pauseBarEl.style.transition = "none";
+    pauseBarEl.style.width = "0%";
+    pauseEl.hidden = false;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        pauseBarEl.style.transition = "width " + PAUSE_SECONDS + "s linear";
+        pauseBarEl.style.width = "100%";
+      });
+    });
+    pauseStopEl.focus();
+
+    pauseTimer = setInterval(function () {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(pauseTimer);
+        pauseTimer = null;
+        pauseNumEl.textContent = "0";
+        pauseDoneEl.disabled = false;
+        pauseDoneEl.textContent = "참음으로 기록";
+        pauseDoneEl.focus();
+      } else {
+        pauseNumEl.textContent = left;
+        pauseDoneEl.textContent = left + "초";
+      }
+    }, 1000);
+  }
+
+  function closePause() {
+    if (pauseTimer) {
+      clearInterval(pauseTimer);
+      pauseTimer = null;
+    }
+    pauseEl.hidden = true;
+    pauseHabitId = null;
+    if (pauseLastFocus && pauseLastFocus.focus) pauseLastFocus.focus();
+  }
+
+  pauseStopEl.addEventListener("click", closePause);
+
+  pauseDoneEl.addEventListener("click", function () {
+    if (pauseDoneEl.disabled) return;
+    var id = pauseHabitId;
+    closePause();
+    if (id) resistHabit(id);
+  });
+
+  pauseEl.addEventListener("click", function (e) {
+    if (e.target === pauseEl) closePause();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !pauseEl.hidden) closePause();
+  });
 
   /* ============================================================
      이벤트

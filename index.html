@@ -69,6 +69,24 @@
     </footer>
   </div>
 
+  <div class="pause" id="pauseOverlay" hidden>
+    <div
+      class="pause__card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pauseTitle"
+    >
+      <p class="pause__title" id="pauseTitle">10초 멈춤</p>
+      <p class="pause__sub">충동이 지나갈 시간을 둡니다.</p>
+      <div class="pause__count"><span id="pauseNum">10</span></div>
+      <div class="pause__bar"><i id="pauseBar"></i></div>
+      <div class="pause__actions">
+        <button type="button" class="pause__stop" id="pauseStop">취소</button>
+        <button type="button" class="pause__done" id="pauseDone" disabled>10초</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
