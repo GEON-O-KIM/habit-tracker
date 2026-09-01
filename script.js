@@ -56,10 +56,10 @@
      ============================================================ */
 
   var habits = loadHabits();
-  var justResistedId = null; // 방금 "참음"을 누른 습관 (반응 애니메이션용)
-  var justLeveledUp = false;
+  var justResistedId = null; // 방금 "참음"을 누른 습관 (방패 연출용)
   var openIds = {}; // 펼쳐 놓은 카드 (세션 한정, 저장 안 함)
   var dragState = null; // 카드 순서 바꾸기 진행 상태
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // 예전 데이터 호환
   habits.forEach(function (h) {
@@ -91,7 +91,7 @@
   var goalEl = document.getElementById("habitGoal");
 
   /* ============================================================
-     참음 SD 캐릭터 (참음 횟수 → 옷)
+     도트 캐릭터 (연속일 → 옷, 20일까지 매일 한 벌씩)
      ============================================================ */
 
   var OUTFITS = [
@@ -105,12 +105,32 @@
     { name: "정장 차림", style: "suit", pants: "#23252e", tie: "#e5794b" },
     { name: "정장과 중절모", style: "suit", pants: "#23252e", tie: "#e5794b", hat: true },
     { name: "망토 두른 신사", style: "suit", pants: "#23252e", tie: "#f6c945", hat: true, cape: true },
-    { name: "왕관 쓴 영웅", style: "suit", pants: "#23252e", tie: "#f6c945", cape: true, crown: true }
+    { name: "왕관 쓴 영웅", style: "suit", pants: "#23252e", tie: "#f6c945", cape: true, crown: true },
+    { name: "은빛 흉갑", style: "armor", plate: "#c2c8d4", plateD: "#9198a6", pants: "#2a2d36" },
+    { name: "황금 흉갑", style: "armor", plate: "#e7c65e", plateD: "#c29a37", pants: "#2a2d36" },
+    { name: "기사단 망토", style: "armor", plate: "#e7c65e", plateD: "#c29a37", pants: "#2a2d36", cape: true },
+    { name: "투구 쓴 기사", style: "armor", plate: "#cdd2dc", plateD: "#969caa", pants: "#2a2d36", cape: true, helm: true },
+    { name: "견습 마법사", style: "robe", robe: "#3c4a86", robeD: "#2d3a6c", staff: true, gem: "#8fd0ff" },
+    { name: "지팡이 든 현자", style: "robe", robe: "#5a3f86", robeD: "#46306a", staff: true, wizhat: true, hatC: "#46306a", gem: "#c9a0ff" },
+    { name: "별을 두른 마도사", style: "robe", robe: "#242a63", robeD: "#1b2050", staff: true, wizhat: true, hatC: "#1b2050", stars: true, gem: "#ffd98a" },
+    { name: "날개 돋은 사도", style: "robe", robe: "#eef1f7", robeD: "#d6dbe6", trim: "#c3cad8", wings: true },
+    { name: "빛을 두른 자", style: "robe", robe: "#f4efe0", robeD: "#ddd3ba", trim: "#d8c48a", wings: true, glow: "#ffe6a2" },
+    { name: "전설이 된 자", style: "armor", plate: "#efd27a", plateD: "#c9a13e", pants: "#23252e", cape: true, crown: true, wings: true, wingColor: "#fff4d6", glow: "#fff0c0" }
   ];
   var MAX_TIER = OUTFITS.length - 1;
+  var OUTFIT_DAYS = 20; // 연속 20일까지 매일 옷 한 단계
 
-  // 32x32 격자에 도트 캐릭터를 그린다.
-  function drawCharacter(ctx, tier, S) {
+  function tierForDay(dayNum) {
+    return Math.max(0, Math.min(dayNum, MAX_TIER));
+  }
+
+  function hexA(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+
+  // 32x32 격자에 도트 캐릭터. pose: "stand"(기본) | "kneel"(한쪽 무릎)
+  function drawCharacter(ctx, tier, S, pose) {
     function p(x, y, w, h, c) {
       ctx.fillStyle = c;
       ctx.fillRect(x * S, y * S, w * S, h * S);
@@ -120,6 +140,35 @@
     var SKIN = "#f6cfa6";
     var SKIN_D = "#e2b18c";
     var OL = "#2c2622";
+    var kneel = pose === "kneel";
+    var dressShoe = o.pants || o.style === "jacket" || o.style === "suit" ||
+      o.style === "armor" || o.style === "robe";
+    var shoe = dressShoe ? "#1c1f26" : "#6a5f52";
+    var legc = o.pants || o.shorts || null;
+
+    if (o.glow) {
+      ctx.save();
+      ctx.globalAlpha = 0.45;
+      var gg = ctx.createRadialGradient(16 * S, 14 * S, 2 * S, 16 * S, 14 * S, 18 * S);
+      gg.addColorStop(0, o.glow);
+      gg.addColorStop(0.55, o.glow);
+      gg.addColorStop(1, hexA(o.glow, 0));
+      ctx.fillStyle = gg;
+      ctx.fillRect(0, 0, 32 * S, 32 * S);
+      ctx.restore();
+    }
+    if (o.wings) {
+      var wc = o.wingColor || "#eef1f7";
+      var wcD = "#cdd3df";
+      p(6, 10, 4, 2, wc); p(4, 12, 5, 2, wc); p(2, 14, 5, 2, wc);
+      p(1, 16, 5, 2, wc); p(2, 18, 4, 2, wc); p(4, 20, 3, 1, wc);
+      p(6, 11, 3, 1, wcD); p(4, 13, 4, 1, wcD); p(2, 15, 4, 1, wcD);
+      p(1, 17, 3, 1, wcD); p(2, 19, 3, 1, wcD);
+      p(22, 10, 4, 2, wc); p(23, 12, 5, 2, wc); p(25, 14, 5, 2, wc);
+      p(26, 16, 5, 2, wc); p(26, 18, 4, 2, wc); p(25, 20, 3, 1, wc);
+      p(23, 11, 3, 1, wcD); p(24, 13, 4, 1, wcD); p(26, 15, 4, 1, wcD);
+      p(28, 17, 3, 1, wcD); p(26, 19, 3, 1, wcD);
+    }
 
     if (o.cape) {
       p(7, 15, 18, 14, "#5e1822");
@@ -134,8 +183,14 @@
     p(10, 15, 12, 10, OL);
     p(8, 16, 3, 9, OL);
     p(21, 16, 3, 9, OL);
-    p(12, 23, 4, 7, OL);
-    p(16, 23, 4, 7, OL);
+    if (kneel) {
+      p(15, 21, 6, 4, OL); p(18, 24, 4, 9, OL);   // 세워 디딘 다리
+      p(10, 22, 6, 5, OL); p(9, 26, 5, 5, OL);    // 무릎 꿇은 다리
+      p(5, 30, 6, 2, OL);                         // 바닥에 눕힌 종아리
+    } else {
+      p(12, 23, 4, 7, OL);
+      p(16, 23, 4, 7, OL);
+    }
 
     p(10, 4, 12, 11, SKIN);
     p(9, 6, 1, 7, SKIN);
@@ -144,22 +199,33 @@
     p(11, 16, 10, 8, SKIN);
     p(9, 17, 2, 6, SKIN);
     p(22, 17, 2, 6, SKIN);
-    p(13, 24, 2, 4, SKIN);
-    p(18, 24, 2, 4, SKIN);
     p(8, 10, 1, 3, SKIN_D);
     p(23, 10, 1, 3, SKIN_D);
-
-    if (o.shorts) {
-      p(12, 22, 3, 3, o.shorts);
-      p(17, 22, 3, 3, o.shorts);
-    } else if (o.pants) {
-      p(12, 23, 3, 5, o.pants);
-      p(17, 23, 3, 5, o.pants);
+    if (kneel) {
+      p(19, 28, 3, 3, SKIN);
+    } else {
+      p(13, 24, 2, 4, SKIN);
+      p(18, 24, 2, 4, SKIN);
     }
-    var dressShoe = o.pants || o.style === "jacket" || o.style === "suit";
-    var shoe = dressShoe ? "#1c1f26" : "#6a5f52";
-    p(12, 28, 4, 2, shoe);
-    p(16, 28, 4, 2, shoe);
+
+    if (kneel) {
+      if (legc) {
+        p(15, 21, 6, 4, legc); p(18, 24, 4, 5, legc);
+        p(10, 22, 6, 4, legc); p(9, 26, 5, 4, legc);
+      }
+      p(18, 31, 8, 2, shoe);
+      p(4, 30, 5, 2, shoe);
+    } else {
+      if (o.shorts) {
+        p(12, 22, 3, 3, o.shorts);
+        p(17, 22, 3, 3, o.shorts);
+      } else if (o.pants) {
+        p(12, 23, 3, 5, o.pants);
+        p(17, 23, 3, 5, o.pants);
+      }
+      p(12, 28, 4, 2, shoe);
+      p(16, 28, 4, 2, shoe);
+    }
 
     if (o.style === "none") {
       p(12, 21, 8, 3, "#e2e6ef");
@@ -195,29 +261,99 @@
       p(14, 16, 4, 8, "#eef1f7");
       p(12, 16, 2, 3, "#15161c");
       p(18, 16, 2, 3, "#15161c");
+    } else if (o.style === "armor") {
+      var pl = o.plate || "#c2c8d4";
+      var plD = o.plateD || "#9198a6";
+      p(11, 16, 10, 8, pl);
+      p(9, 16, 2, 7, pl);
+      p(22, 16, 2, 7, plD);
+      p(11, 16, 10, 1, "#eef1f6");
+      p(9, 15, 3, 3, plD);
+      p(21, 15, 3, 3, plD);
+      p(15, 17, 2, 7, plD);
+      p(11, 20, 10, 1, plD);
+      p(13, 22, 6, 2, plD);
+    } else if (o.style === "robe") {
+      var rb = o.robe || "#3c4a86";
+      var rbD = o.robeD || "#2d3a6c";
+      var trim = o.trim || "#e8c860";
+      var rlen = kneel ? 10 : 15;
+      p(10, 15, 12, rlen, rb);
+      if (!kneel) {
+        p(9, 25, 14, 4, rb);
+        p(8, 28, 16, 2, rb);
+      }
+      p(9, 16, 2, 9, rb);
+      p(22, 16, 3, 9, rbD);
+      p(20, 15, 2, rlen, rbD);
+      p(10, 15, 12, 1, "rgba(255,255,255,0.16)");
+      p(11, 15, 10, 2, trim);
+      p(15, 17, 1, rlen - 3, trim);
+      p(10, 19, 12, 1, rbD);
+      if (!kneel) {
+        p(9, 29, 16, 1, trim);
+        p(11, 30, 4, 1, shoe);
+        p(17, 30, 4, 1, shoe);
+      }
+      if (o.stars) {
+        p(12, 20, 1, 1, "#ffe9a8"); p(18, 22, 1, 1, "#ffffff");
+        p(13, 24, 1, 1, "#ffe9a8"); p(19, 19, 1, 1, "#ffffff");
+        p(11, 23, 1, 1, "#ffe9a8"); p(17, 26, 1, 1, "#ffffff");
+      }
     }
     if (o.tie) p(15, 17, 2, 5, o.tie);
 
-    p(9, 3, 14, 3, "#6b4a2f");
-    p(9, 4, 1, 4, "#6b4a2f");
-    p(22, 4, 1, 4, "#6b4a2f");
-    p(8, 5, 1, 3, "#6b4a2f");
-    p(23, 5, 1, 3, "#6b4a2f");
-    p(9, 5, 3, 2, "#6b4a2f");
-    p(20, 5, 3, 2, "#6b4a2f");
-    p(11, 3, 10, 1, "#7d5941");
-
-    p(12, 9, 2, 3, "#2a2320");
-    p(18, 9, 2, 3, "#2a2320");
-    p(12, 9, 1, 1, "#ffffff");
-    p(18, 9, 1, 1, "#ffffff");
-    if (tier >= 7) {
-      p(14, 13, 4, 1, "#a85f48");
-      p(15, 14, 2, 1, "#a85f48");
-    } else {
-      p(15, 13, 2, 1, "#a85f48");
+    if (o.staff) {
+      p(23, 9, 1, 21, "#6b4a2f");
+      p(23, 9, 1, 10, "#7d5941");
+      p(22, 7, 3, 3, o.gem || "#8fd0ff");
+      p(22, 6, 3, 1, "#e7f5ff");
     }
 
+    if (!o.helm) {
+      p(9, 3, 14, 3, "#6b4a2f");
+      p(9, 4, 1, 4, "#6b4a2f");
+      p(22, 4, 1, 4, "#6b4a2f");
+      p(8, 5, 1, 3, "#6b4a2f");
+      p(23, 5, 1, 3, "#6b4a2f");
+      p(9, 5, 3, 2, "#6b4a2f");
+      p(20, 5, 3, 2, "#6b4a2f");
+      p(11, 3, 10, 1, "#7d5941");
+      p(12, 9, 2, 3, "#2a2320");
+      p(18, 9, 2, 3, "#2a2320");
+      p(12, 9, 1, 1, "#ffffff");
+      p(18, 9, 1, 1, "#ffffff");
+      if (tier >= 7) {
+        p(14, 13, 4, 1, "#a85f48");
+        p(15, 14, 2, 1, "#a85f48");
+      } else {
+        p(15, 13, 2, 1, "#a85f48");
+      }
+    }
+
+    if (o.helm) {
+      p(9, 3, 14, 11, "#b7bcc7");
+      p(9, 3, 14, 2, "#d2d6de");
+      p(8, 5, 1, 7, "#9298a4");
+      p(23, 5, 1, 7, "#9298a4");
+      p(10, 9, 5, 2, "#181b22");
+      p(17, 9, 5, 2, "#181b22");
+      p(15, 6, 2, 8, "#8b909c");
+      p(11, 2, 10, 2, "#e7c65e");
+      p(15, 0, 2, 3, "#e7c65e");
+    }
+    if (o.wizhat) {
+      var hc = o.hatC || "#3a3f6b";
+      p(6, 4, 20, 2, hc);
+      p(9, 2, 14, 2, hc);
+      p(12, 0, 8, 2, hc);
+      p(14, 0, 4, 1, "#fff1b8");
+      p(6, 4, 20, 1, o.hatBand || "#e8c860");
+      if (o.stars) {
+        p(11, 2, 1, 1, "#ffe9a8");
+        p(19, 1, 1, 1, "#ffffff");
+      }
+    }
     if (o.hat) {
       p(7, 4, 18, 2, "#1b1d24");
       p(9, 0, 14, 4, "#23252e");
@@ -239,8 +375,191 @@
     c.height = 32 * S;
     var ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
-    drawCharacter(ctx, Math.min(tier, MAX_TIER), S);
+    drawCharacter(ctx, Math.min(tier, MAX_TIER), S, "stand");
     return c;
+  }
+
+  /* ============================================================
+     참음 방패 씬 — 옷 입은 캐릭터가 무릎 꿇고 방패로 돌을 막음
+     충동이 0이면 편히 서 있음. 참음 횟수 = 막아 쌓은 돌.
+     ============================================================ */
+
+  var GW = 200, GH = 200, CS = 4;
+  var CHAR_OFF_X = 8;
+  var GROUND = 188;
+  var CHAR_OFF_Y = GROUND - 32 * CS;
+  var SHIELD_CX = CHAR_OFF_X + 24 * CS;
+  var SHIELD_CY = CHAR_OFF_Y + 20 * CS;
+  var SHIELD_RY = 5.6 * CS;
+  var SHIELD_FRONT_PX = SHIELD_CX + 4.4 * CS;
+  var WALL_X = GW - 12;
+  var PILE_CX = SHIELD_FRONT_PX + 22;
+
+  function pileRowCount(row) { return Math.max(1, 5 - row); }
+  function pileSlot(n) {
+    var row = 0, acc = 0;
+    while (acc + pileRowCount(row) <= n) { acc += pileRowCount(row); row++; }
+    var count = pileRowCount(row);
+    var col = n - acc;
+    var spacing = 10;
+    var x = PILE_CX - ((count - 1) * spacing) / 2 + col * spacing;
+    var y = GROUND - 5 - row * 7;
+    return {
+      x: x + (frac(n * 12.9) - 0.5) * 3,
+      y: y + (frac(n * 7.3) - 0.5) * 2,
+      r: 5.4 + frac(n * 3.1) * 1.6,
+      seed: frac(n * 5.7) * 6
+    };
+  }
+
+  function rockColor(s) { return Math.floor(s) % 2 ? "#b0a695" : "#c6bca8"; }
+
+  function drawRock(ctx, x, y, r, seed) {
+    ctx.fillStyle = rockColor(seed);
+    ctx.strokeStyle = "rgba(0,0,0,0.28)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = (i / 6) * Math.PI * 2 + seed;
+      var rr = r * (0.72 + 0.28 * Math.abs(Math.sin(seed + i * 1.7)));
+      var px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  function drawShield(ctx) {
+    var cx = SHIELD_CX, cy = SHIELD_CY, S = CS;
+    ctx.fillStyle = "#f6cfa6";
+    ctx.fillRect(CHAR_OFF_X + 21 * S, cy - S, cx - (CHAR_OFF_X + 21 * S), S * 2.2);
+    ctx.fillStyle = "#e2b18c";
+    ctx.fillRect(CHAR_OFF_X + 21 * S, cy + S * 1.2, cx - (CHAR_OFF_X + 21 * S), S * 0.8);
+    ctx.save();
+    ctx.fillStyle = "#8a6a3a";
+    ctx.strokeStyle = "#5e4622";
+    ctx.lineWidth = Math.max(1, S * 0.8);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, S * 4.4, SHIELD_RY, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "#b98f4e";
+    ctx.lineWidth = Math.max(1, S * 0.55);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, S * 2.7, SHIELD_RY * 0.64, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#5e4622";
+    ctx.beginPath();
+    ctx.arc(cx, cy, S * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // tier: 옷 단계, blocked: 오늘 막은 횟수, opts.pileCount/opts.extra: 연출용
+  function drawShieldScene(ctx, tier, blocked, opts) {
+    opts = opts || {};
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, GW, GH);
+
+    ctx.fillStyle = "#6c6459";
+    ctx.fillRect(WALL_X, 0, GW - WALL_X, GH);
+    ctx.fillStyle = "rgba(0,0,0,0.16)";
+    for (var w = 6; w < GH; w += 13) ctx.fillRect(WALL_X, w, GW - WALL_X, 1);
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    ctx.fillRect(WALL_X, 0, 2, GH);
+
+    ctx.fillStyle = "rgba(0,0,0,0.14)";
+    ctx.fillRect(0, GROUND, GW, 2);
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.beginPath();
+    ctx.ellipse(CHAR_OFF_X + 15 * CS, GROUND + 2, 40, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    var kneeling = blocked > 0 || opts.forceKneel;
+    ctx.save();
+    ctx.translate(CHAR_OFF_X, CHAR_OFF_Y);
+    drawCharacter(ctx, tier, CS, kneeling ? "kneel" : "stand");
+    ctx.restore();
+
+    if (!kneeling) return;
+    drawShield(ctx);
+
+    var shown = opts.pileCount == null ? blocked : opts.pileCount;
+    for (var i = 0; i < shown; i++) {
+      var s = pileSlot(i);
+      drawRock(ctx, s.x, s.y, s.r, s.seed);
+    }
+    if (opts.extra) opts.extra(ctx);
+  }
+
+  function shieldCanvas(tier, blocked) {
+    var c = document.createElement("canvas");
+    c.width = GW;
+    c.height = GH;
+    drawShieldScene(c.getContext("2d"), tier, blocked);
+    c._tier = tier;
+    c._blocked = blocked;
+    return c;
+  }
+
+  // 참음: 돌 하나가 날아와 방패에 맞고 굴러 쌓이는 연출
+  function animateShieldThrow(canvas, tier) {
+    var ctx = canvas.getContext("2d");
+    var blocked = canvas._blocked;
+    if (reduceMotion || blocked < 1) {
+      drawShieldScene(ctx, tier, blocked);
+      return;
+    }
+    var target = pileSlot(blocked - 1);
+    var rock = {
+      x: WALL_X - 2,
+      y: SHIELD_CY - 20 - frac(blocked * 4.1) * 30,
+      r: target.r,
+      seed: target.seed,
+      vx: -(4.8 + frac(blocked) * 1.4),
+      vy: -0.3,
+      phase: "fly"
+    };
+    var flash = 0, t = 0;
+    function step() {
+      t++;
+      if (flash > 0) flash--;
+      if (rock.phase === "fly") {
+        rock.x += rock.vx; rock.y += rock.vy; rock.vy += 0.04;
+        if (rock.x <= SHIELD_FRONT_PX) {
+          rock.phase = "drop";
+          rock.x = SHIELD_FRONT_PX;
+          rock.vx = 1.4 + frac(t) * 1.2;
+          rock.vy = -2.6 - frac(t * 2);
+          flash = 6;
+        }
+      } else if (rock.phase === "drop") {
+        rock.x += rock.vx; rock.y += rock.vy; rock.vy += 0.5; rock.vx *= 0.95;
+        if (rock.y >= target.y) rock.phase = "done";
+      }
+      drawShieldScene(ctx, tier, blocked, {
+        pileCount: blocked - 1,
+        extra: function (c) {
+          if (rock.phase !== "done") drawRock(c, rock.x, rock.y, rock.r, rock.seed);
+          if (flash > 0) {
+            c.save();
+            c.strokeStyle = "rgba(255,236,180," + (flash / 6) + ")";
+            c.lineWidth = 2;
+            c.beginPath();
+            c.arc(SHIELD_FRONT_PX - 2, SHIELD_CY, 8 + (6 - flash) * 3, -0.9, 0.9);
+            c.stroke();
+            c.restore();
+          }
+        }
+      });
+      if (rock.phase !== "done" || flash > 0) {
+        requestAnimationFrame(step);
+      } else {
+        drawShieldScene(ctx, tier, blocked);
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   /* ============================================================
@@ -253,11 +572,19 @@
     return v - Math.floor(v);
   }
 
-  var TW = { W: 240, H: 250 };
+  var TW = { W: 384, H: 208 };
   var C_FACE2 = "#efe8d6";
   var SUIT_RED = "#c0473c";
   var SUIT_BLK = "#33333c";
   var SUITS = ["♠", "♥", "♦", "♣"];
+
+  // 아직 안 쌓인 목표 자리 — 테마별 점선 색
+  function ghostStroke() {
+    var t = document.documentElement.getAttribute("data-theme");
+    var dark = t === "dark" ||
+      (t !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    return dark ? "rgba(190,192,200,0.34)" : "rgba(90,95,110,0.34)";
+  }
 
   function roundRectPath(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -269,12 +596,20 @@
     ctx.closePath();
   }
 
-  // 카드 한 장: 중심 (cx,cy), 길이 len, 폭 w, 각도 ang(라디안)
-  function paintCard(ctx, cx, cy, len, w, ang, suitIdx) {
+  // 카드 한 장: 중심 (cx,cy), 길이 len, 폭 w, 각도 ang(라디안). ghost=true면 점선 윤곽만.
+  function paintCard(ctx, cx, cy, len, w, ang, suitIdx, ghost) {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(ang);
     roundRectPath(ctx, -len / 2, -w / 2, len, w, Math.min(2.5, w / 3));
+    if (ghost) {
+      ctx.strokeStyle = ghostStroke();
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2.5, 3]);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     var grad = ctx.createLinearGradient(0, -w / 2, 0, w / 2);
     grad.addColorStop(0, "#fffdf6");
     grad.addColorStop(1, C_FACE2);
@@ -319,11 +654,11 @@
     var cap = (R * (R + 1)) / 2;
     var n = Math.max(0, Math.min(Math.round(dayCount), cap));
 
-    var rowH = Math.min(28, (H - 2 * m) / R);
-    var pitch = Math.min((W - 2 * m) / R, rowH * 1.6);
+    var rowH = Math.min(24, (H - 2 * m) / R);
+    var pitch = Math.min((W - 2 * m) / R, rowH * 1.7);
     var foot = pitch * 0.82;
     var th = rowH * 1.02;
-    var cardW = Math.max(3, pitch * 0.15);
+    var cardW = Math.max(3, pitch * 0.14);
     var cardLen = Math.sqrt(th * th + (foot / 2) * (foot / 2));
     var totalH = R * rowH;
     var baseY = H - m - Math.max(0, (H - 2 * m - totalH) / 2);
@@ -345,29 +680,25 @@
       for (var f = 0; f < rowFill; f++) filledSet[order[f]] = true;
       var present = [];
       for (var j = 0; j < rc; j++) {
-        if (filledSet[j]) {
-          var tx = left + j * pitch;
-          cards.push({
-            cx: tx - foot / 4, cy: (apexY + rowY) / 2, len: cardLen, w: cardW,
-            ang: Math.atan2(th, -foot / 2), suit: suit++ % 4
-          });
-          cards.push({
-            cx: tx + foot / 4, cy: (apexY + rowY) / 2, len: cardLen, w: cardW,
-            ang: Math.atan2(th, foot / 2), suit: suit++ % 4
-          });
-          present.push(tx);
-          if (rc === 1) topApexY = apexY;
-        } else {
-          present.push(null);
-        }
+        var tx = left + j * pitch;
+        var filled = !!filledSet[j];
+        cards.push({
+          cx: tx - foot / 4, cy: (apexY + rowY) / 2, len: cardLen, w: cardW,
+          ang: Math.atan2(th, -foot / 2), suit: suit++ % 4, ghost: !filled
+        });
+        cards.push({
+          cx: tx + foot / 4, cy: (apexY + rowY) / 2, len: cardLen, w: cardW,
+          ang: Math.atan2(th, foot / 2), suit: suit++ % 4, ghost: !filled
+        });
+        present.push({ x: tx, filled: filled });
+        if (rc === 1) topApexY = apexY;
       }
       for (var k = 0; k < rc - 1; k++) {
-        if (present[k] != null && present[k + 1] != null) {
-          cards.push({
-            cx: (present[k] + present[k + 1]) / 2, cy: apexY - cardW * 0.6,
-            len: pitch + foot * 0.15, w: cardW, ang: 0, suit: suit++ % 4
-          });
-        }
+        var both = present[k].filled && present[k + 1].filled;
+        cards.push({
+          cx: (present[k].x + present[k + 1].x) / 2, cy: apexY - cardW * 0.6,
+          len: pitch + foot * 0.15, w: cardW, ang: 0, suit: suit++ % 4, ghost: !both
+        });
       }
     }
     return { cards: cards, cx: cx, baseY: baseY, topY: topApexY, rows: R, cap: cap, filled: n };
@@ -377,7 +708,7 @@
     ctx.save();
     ctx.fillStyle = "rgba(0,0,0,0.10)";
     ctx.beginPath();
-    ctx.ellipse(T.cx, T.baseY + 5, spread || 52, 7, 0, 0, 7);
+    ctx.ellipse(T.cx, T.baseY + 5, spread || 74, 7, 0, 0, 7);
     ctx.fill();
     ctx.restore();
   }
@@ -408,20 +739,28 @@
     var T = buildTower(dayCount, goal);
     groundShadow(ctx, T);
     T.cards.forEach(function (cd) {
-      paintCard(ctx, cd.cx, cd.cy, cd.len, cd.w, cd.ang, cd.suit);
+      if (cd.ghost) paintCard(ctx, cd.cx, cd.cy, cd.len, cd.w, cd.ang, cd.suit, true);
+    });
+    T.cards.forEach(function (cd) {
+      if (!cd.ghost) paintCard(ctx, cd.cx, cd.cy, cd.len, cd.w, cd.ang, cd.suit, false);
     });
     if (done) drawFlag(ctx, T.cx, T.topY);
     c._tower = T;
     return c;
   }
 
-  // 무너지는 연출 — 카드가 튕겨 흩어졌다가 바닥에 쌓임
+  // 무너지는 연출 — 쌓인 카드만 튕겨 흩어지고, 목표 윤곽(점선)은 남는다
   function collapseTower(canvas, dayCount, goal) {
     var ctx = canvas.getContext("2d");
     var T = canvas._tower || buildTower(dayCount, goal);
-    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var floor = T.baseY + 3;
-    var bodies = T.cards.map(function (cd) {
+    var ghosts = T.cards.filter(function (c) { return c.ghost; });
+    function drawGhosts() {
+      ghosts.forEach(function (cd) {
+        paintCard(ctx, cd.cx, cd.cy, cd.len, cd.w, cd.ang, cd.suit, true);
+      });
+    }
+    var bodies = T.cards.filter(function (c) { return !c.ghost; }).map(function (cd) {
       return {
         x: cd.cx, y: cd.cy, ang: cd.ang, len: cd.len, w: cd.w, suit: cd.suit,
         vx: (Math.random() - 0.5) * 4 + (cd.cx - T.cx) * 0.06,
@@ -441,11 +780,12 @@
       ctx.restore();
     }
 
-    if (reduce) {
+    if (reduceMotion) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      groundShadow(ctx, T, 64);
+      groundShadow(ctx, T, 90);
+      drawGhosts();
       bodies.forEach(function (b, i) {
-        var rx = T.cx + (frac(i * 1.7) - 0.5) * 120;
+        var rx = T.cx + (frac(i * 1.7) - 0.5) * 180;
         var ry = floor - frac(i * 2.3) * 10;
         paintCard(ctx, rx, ry, b.len, b.w, (frac(i * 3.1) - 0.5) * 3, b.suit);
       });
@@ -457,7 +797,8 @@
     function step() {
       t++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      groundShadow(ctx, T, 52 + Math.min(14, t * 0.4));
+      groundShadow(ctx, T, 74 + Math.min(20, t * 0.5));
+      drawGhosts();
       var settled = 0;
       bodies.forEach(function (b) {
         if (!b.rest) {
@@ -483,7 +824,7 @@
       });
       if (t < 12) {
         for (var d = 0; d < 5; d++) {
-          dust(T.cx + (Math.random() - 0.5) * 70, T.baseY - Math.random() * 40);
+          dust(T.cx + (Math.random() - 0.5) * 90, T.baseY - Math.random() * 40);
         }
       }
       if (settled < bodies.length && t < 150) requestAnimationFrame(step);
@@ -626,7 +967,8 @@
     var remaining = habit.goalDays - dayNum;
     var achieved = remaining <= 0;
     var percent = Math.min(100, Math.round((dayNum / habit.goalDays) * 100));
-    var tier = Math.min(habit.resistCount, MAX_TIER);
+    var tier = tierForDay(dayNum);       // 옷 = 연속일
+    var blocked = habit.resistCount;     // 오늘 방패로 막은 충동 수
 
     var card = document.createElement("div");
     card.className = "habit";
@@ -716,25 +1058,20 @@
     act.appendChild(violateBtn);
     act.appendChild(countSpan);
 
-    /* ---- 보상 서랍 ---- */
+    /* ---- 보상 서랍 (의상 | 참음 방패 / 트럼프 탑) ---- */
     var reward = document.createElement("div");
     reward.className = "habit__reward";
 
-    // 왼쪽: 오늘의 캐릭터
+    // 왼쪽 위: 의상 룸 (연속일 → 옷)
     var colChar = document.createElement("div");
     colChar.className = "reward__col";
     var charCap = document.createElement("div");
     charCap.className = "reward__cap";
-    charCap.textContent = habit.resistCount + "회 참음";
+    charCap.textContent = "연속 D+" + dayNum;
     colChar.appendChild(charCap);
     var stage = document.createElement("div");
     stage.className = "box box--stage";
-    var charCv = charCanvas(tier, 8);
-    if (habit.id === justResistedId) {
-      charCv.classList.add(justLeveledUp ? "is-levelup" : "is-bump");
-      charCap.classList.add("is-bump");
-    }
-    stage.appendChild(charCv);
+    stage.appendChild(charCanvas(tier, 8));
     colChar.appendChild(stage);
     var charLabel = document.createElement("div");
     charLabel.className = "reward__label";
@@ -742,13 +1079,38 @@
     colChar.appendChild(charLabel);
     var charHint = document.createElement("div");
     charHint.className = "reward__hint";
-    charHint.textContent = tier < MAX_TIER ? "참을수록 옷이 바뀝니다" : "마지막 옷";
+    charHint.textContent = dayNum >= OUTFIT_DAYS
+      ? "20벌 완성"
+      : "매일 한 벌씩 (" + Math.min(dayNum, OUTFIT_DAYS) + " / " + OUTFIT_DAYS + ")";
     colChar.appendChild(charHint);
     reward.appendChild(colChar);
 
-    // 오른쪽: 연속 카드 피라미드
+    // 오른쪽 위: 참음 방패 씬 (오늘 막은 충동)
+    var colGuard = document.createElement("div");
+    colGuard.className = "reward__col";
+    var guardCap = document.createElement("div");
+    guardCap.className = "reward__cap";
+    guardCap.textContent = blocked === 0 ? "오늘 충동 없음" : "오늘 " + blocked + "번 막음";
+    colGuard.appendChild(guardCap);
+    var guardBox = document.createElement("div");
+    guardBox.className = "box box--guard";
+    var guardCv = shieldCanvas(tier, blocked);
+    guardBox.appendChild(guardCv);
+    colGuard.appendChild(guardBox);
+    if (habit.id === justResistedId) animateShieldThrow(guardCv, tier);
+    var guardLabel = document.createElement("div");
+    guardLabel.className = "reward__label";
+    guardLabel.textContent = blocked === 0 ? "잔잔한 하루" : "흔들렸지만 넘김";
+    colGuard.appendChild(guardLabel);
+    var guardHint = document.createElement("div");
+    guardHint.className = "reward__hint";
+    guardHint.textContent = "충동이 없는 날도 좋은 날입니다";
+    colGuard.appendChild(guardHint);
+    reward.appendChild(colGuard);
+
+    // 아래: 연속 카드 피라미드 (전체폭)
     var colTower = document.createElement("div");
-    colTower.className = "reward__col";
+    colTower.className = "reward__col reward__col--wide";
     var towerCap = document.createElement("div");
     towerCap.className = "reward__cap";
     towerCap.textContent = "연속 D+" + dayNum;
@@ -799,7 +1161,7 @@
         !confirm(
           '"' +
             habit.name +
-            '" 습관을 어겼나요?\nD-day와 참음 캐릭터가 초기화되고, 어긴 횟수가 1 늘어납니다.'
+            '" 습관을 어겼나요?\n연속일과 옷·탑이 처음으로 돌아가고, 어긴 횟수가 1 늘어납니다.'
         )
       ) {
         return;
@@ -808,10 +1170,9 @@
       card.classList.add("is-open", "is-broken");
       stage.classList.add("is-stumble");
       collapseTower(towerCv, dayNum, habit.goalDays);
-      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       setTimeout(function () {
         violateHabit(habit.id);
-      }, reduce ? 120 : 900);
+      }, reduceMotion ? 120 : 900);
     });
 
     card.appendChild(top);
@@ -880,15 +1241,11 @@
     rolloverResist();
     var habit = findHabit(id);
     if (!habit) return;
-    var prevTier = Math.min(habit.resistCount, MAX_TIER);
     habit.resistCount += 1;
-    var newTier = Math.min(habit.resistCount, MAX_TIER);
-    justResistedId = id;
-    justLeveledUp = newTier !== prevTier;
+    justResistedId = id; // buildCard에서 방패로 막는 연출 실행
     saveHabits(habits);
     render();
     justResistedId = null;
-    justLeveledUp = false;
   }
 
   function violateHabit(id) {

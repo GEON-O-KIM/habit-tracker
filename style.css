@@ -416,7 +416,7 @@ body {
   white-space: nowrap;
 }
 
-/* ---------- 보상 서랍 (캐릭터 · 카드 피라미드) ---------- */
+/* ---------- 보상 서랍 (의상 · 참음 방패 · 카드 피라미드) ---------- */
 
 .habit__reward {
   border-top: 1px solid var(--line);
@@ -437,6 +437,10 @@ body {
   align-items: center;
   gap: 5px;
   min-width: 0;
+}
+
+.reward__col--wide {
+  grid-column: 1 / -1;
 }
 
 .reward__cap {
@@ -475,8 +479,26 @@ body {
   image-rendering: pixelated;
 }
 
-.box--tower {
+.box--guard {
   height: 200px;
+  align-items: center;
+  image-rendering: pixelated;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 7%, var(--surface)) 0%,
+    color-mix(in srgb, var(--accent) 7%, var(--surface)) 70%,
+    color-mix(in srgb, var(--ink) 8%, var(--surface-2)) 70%
+  );
+}
+
+.box--guard canvas {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.box--tower {
+  aspect-ratio: 384 / 190;
   align-items: center;
   background: radial-gradient(
     ellipse at 50% 120%,
@@ -486,8 +508,9 @@ body {
 }
 
 .box--tower canvas {
-  height: 96%;
-  width: auto;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .reward__label {
@@ -501,26 +524,6 @@ body {
   color: var(--ink-dim);
   text-align: center;
   line-height: 1.4;
-}
-
-/* 참음 반응 */
-
-.box--stage canvas.is-bump,
-.reward__cap.is-bump {
-  animation: char-bump 0.32s ease;
-}
-
-.box--stage canvas.is-levelup {
-  animation: char-jump 0.55s cubic-bezier(0.3, 1.4, 0.6, 1);
-}
-
-@keyframes char-bump {
-  45% { transform: scale(1.12); }
-}
-
-@keyframes char-jump {
-  35% { transform: translateY(-12px) scale(1.05); }
-  70% { transform: translateY(0) scale(0.97); }
 }
 
 /* 어김 → 피라미드가 무너지는 순간 강조 */
