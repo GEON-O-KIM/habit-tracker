@@ -699,7 +699,7 @@
     ctx.restore();
   }
 
-  // 목표 일수 → 완성 피라미드의 층수 (바닥 R개 → R-1 → ... → 1, 합계 >= goal)
+  // 목표 일수에 맞는 피라미드 층수(대략적인 삼각수 기준 — 실제 칸 수는 goal과 정확히 같게 아래서 배분)
   function pyramidRows(goal) {
     var R = Math.ceil((-1 + Math.sqrt(1 + 8 * Math.max(1, goal))) / 2);
     return Math.max(2, R);
@@ -722,8 +722,14 @@
     var cx = W / 2;
     var m = 14;
     var R = pyramidRows(goal);
-    var cap = (R * (R + 1)) / 2;
+    var cap = Math.max(1, Math.round(goal)); // 목표 일수 = 피라미드 전체 칸 수 (정확히 일치)
     var n = Math.max(0, Math.min(Math.round(dayCount), cap));
+
+    // cap을 R개 행에 고르게 배분 (아래 행부터 1칸씩 더 넓게) — 항상 목표만큼만 쌓여 마지막 칸에서 완성된다
+    var base = Math.floor(cap / R);
+    var extra = cap - base * R;
+    var rowWidths = [];
+    for (var ri = 0; ri < R; ri++) rowWidths.push(base + (ri < extra ? 1 : 0));
 
     var rowH = Math.min(24, (H - 2 * m) / R);
     var pitch = Math.min((W - 2 * m) / R, rowH * 1.7);
@@ -740,7 +746,7 @@
     var topApexY = baseY - totalH;
 
     for (var i = 0; i < R; i++) {
-      var rc = R - i;
+      var rc = rowWidths[i];
       var rowY = baseY - i * rowH;
       var apexY = rowY - th;
       var left = cx - ((rc - 1) / 2) * pitch;
@@ -762,8 +768,8 @@
           ang: Math.atan2(th, foot / 2), suit: suit++ % 4, ghost: !filled
         });
         present.push({ x: tx, filled: filled });
-        if (rc === 1) topApexY = apexY;
       }
+      if (i === R - 1) topApexY = apexY;
       for (var k = 0; k < rc - 1; k++) {
         var both = present[k].filled && present[k + 1].filled;
         cards.push({

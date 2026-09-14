@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>의상 · 방 미리보기</title>
+<style>
+  :root {
+    --paper: #e8eaec; --surface: #fcfcfd; --surface-2: #eef0f2;
+    --ink: #1e2024; --ink-dim: #6a6e77; --line: #d8dadf;
+    --accent: #3f7d6e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #161719; --surface: #202225; --surface-2: #292c30;
+      --ink: #e7e6e2; --ink-dim: #969aa2; --line: #33363b;
+      --accent: #6fae9d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    padding: 24px 16px 60px;
+  }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .note { font-size: 12px; color: var(--ink-dim); margin: 0 0 24px; }
+  h2 {
+    font-size: 13px; font-weight: 600; color: var(--ink-dim);
+    margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line);
+    font-family: ui-monospace, "IBM Plex Mono", monospace; letter-spacing: 0.02em;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 10px;
+  }
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+  }
+  .cell canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    image-rendering: pixelated;
+    background: var(--surface-2);
+    border-radius: 6px;
+  }
+  .cell .day {
+    margin-top: 6px;
+    font-family: ui-monospace, "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+  }
+  .cell .name {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+</style>
+</head>
+<body>
+  <h1>의상 &amp; 방 미리보기</h1>
+  <p class="note">현재 script.js에 들어있는 렌더 로직을 그대로 복사해 만든 확인용 페이지입니다. 앱 코드가 바뀌면 이 파일도 다시 맞춰야 합니다.</p>
+
+  <h2>의상 — Day 1 ~ 25</h2>
+  <div class="grid" id="outfitGrid"></div>
+
+  <h2>방(배경) — Day 25(기준) ~ 30</h2>
+  <div class="grid" id="roomGrid"></div>
+
+<script>
+/* ============================================================
+   아래는 script.js의 드로잉 로직을 그대로 옮겨온 것 (미리보기 전용)
+   ============================================================ */
+
+var OUTFITS = [
+  { name: "맨몸으로 시작", style: "none" },
+  { name: "티셔츠", style: "tee", c: "#4f7cff", c2: "#3b63d6" },
+  { name: "반팔 반바지", style: "tee", c: "#e5794b", c2: "#c86038", shorts: "#3b6ea5" },
+  { name: "깔끔한 셔츠", style: "shirt" },
+  { name: "셔츠와 슬랙스", style: "shirt", pants: "#3b4b66" },
+  { name: "포근한 스웨터", style: "sweater", c: "#3f9e6a", c2: "#33845a", pants: "#3b4b66" },
+  { name: "멋진 재킷", style: "jacket", c: "#574ccb", c2: "#463cae", pants: "#2f3646" },
+  { name: "정장 차림", style: "suit", pants: "#23252e", tie: "#e5794b" },
+  { name: "정장과 중절모", style: "suit", pants: "#23252e", tie: "#e5794b", hat: true },
+  { name: "망토 두른 신사", style: "suit", pants: "#23252e", tie: "#f6c945", hat: true, cape: true },
+  { name: "왕관 쓴 영웅", style: "suit", pants: "#23252e", tie: "#f6c945", cape: true, crown: true },
+  { name: "은빛 흉갑", style: "armor", plate: "#c2c8d4", plateD: "#9198a6", pants: "#2a2d36" },
+  { name: "황금 흉갑", style: "armor", plate: "#e7c65e", plateD: "#c29a37", pants: "#2a2d36" },
+  { name: "기사단 망토", style: "armor", plate: "#e7c65e", plateD: "#c29a37", pants: "#2a2d36", cape: true },
+  { name: "투구 쓴 기사", style: "armor", plate: "#cdd2dc", plateD: "#969caa", pants: "#2a2d36", cape: true, helm: true },
+  { name: "견습 마법사", style: "robe", robe: "#3c4a86", robeD: "#2d3a6c", staff: true, gem: "#8fd0ff" },
+  { name: "지팡이 든 현자", style: "robe", robe: "#5a3f86", robeD: "#46306a", staff: true, wizhat: true, hatC: "#46306a", gem: "#c9a0ff" },
+  { name: "별을 두른 마도사", style: "robe", robe: "#242a63", robeD: "#1b2050", staff: true, wizhat: true, hatC: "#1b2050", stars: true, gem: "#ffd98a" },
+  { name: "날개 돋은 사도", style: "robe", robe: "#eef1f7", robeD: "#d6dbe6", trim: "#c3cad8", wings: true },
+  { name: "빛을 두른 자", style: "robe", robe: "#f4efe0", robeD: "#ddd3ba", trim: "#d8c48a", wings: true, glow: "#ffe6a2" },
+  { name: "전설이 된 자", style: "armor", plate: "#efd27a", plateD: "#c9a13e", pants: "#23252e", cape: true, crown: true, wings: true, wingColor: "#fff4d6", glow: "#fff0c0" },
+  { name: "가벼운 니트 카디건", style: "sweater", c: "#8ba888", c2: "#6f8c6c", pants: "#4a4438" },
+  { name: "손에 익은 리넨 셔츠", style: "shirt", pants: "#8c7a5a" },
+  { name: "즐겨 입는 옷", style: "tee", c: "#a3785a", c2: "#82593f" },
+  { name: "데일리 자켓", style: "jacket", c: "#5b6270", c2: "#454b56", pants: "#2f3646" },
+  { name: "단정한 코트", style: "coat", coat: "#cfc3ac", coatD: "#a99873", pants: "#3b3f47", knot: "#8a6a45" }
+];
+var MAX_TIER = OUTFITS.length - 1;
+
+function hexA(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+}
+
+function drawCharacter(ctx, tier, S, pose) {
+  function p(x, y, w, h, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(x * S, y * S, w * S, h * S);
+  }
+  var o = OUTFITS[Math.min(tier, MAX_TIER)];
+  var SKIN = "#f6cfa6";
+  var SKIN_D = "#e2b18c";
+  var OL = "#2c2622";
+  var kneel = pose === "kneel";
+  var dressShoe = o.pants || o.style === "jacket" || o.style === "suit" ||
+    o.style === "armor" || o.style === "robe";
+  var shoe = dressShoe ? "#1c1f26" : "#6a5f52";
+  var legc = o.pants || o.shorts || null;
+
+  if (o.glow) {
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    var gg = ctx.createRadialGradient(16 * S, 14 * S, 2 * S, 16 * S, 14 * S, 18 * S);
+    gg.addColorStop(0, o.glow);
+    gg.addColorStop(0.55, o.glow);
+    gg.addColorStop(1, hexA(o.glow, 0));
+    ctx.fillStyle = gg;
+    ctx.fillRect(0, 0, 32 * S, 32 * S);
+    ctx.restore();
+  }
+  if (o.wings) {
+    var wc = o.wingColor || "#eef1f7";
+    var wcD = "#cdd3df";
+    p(6, 10, 4, 2, wc); p(4, 12, 5, 2, wc); p(2, 14, 5, 2, wc);
+    p(1, 16, 5, 2, wc); p(2, 18, 4, 2, wc); p(4, 20, 3, 1, wc);
+    p(6, 11, 3, 1, wcD); p(4, 13, 4, 1, wcD); p(2, 15, 4, 1, wcD);
+    p(1, 17, 3, 1, wcD); p(2, 19, 3, 1, wcD);
+    p(22, 10, 4, 2, wc); p(23, 12, 5, 2, wc); p(25, 14, 5, 2, wc);
+    p(26, 16, 5, 2, wc); p(26, 18, 4, 2, wc); p(25, 20, 3, 1, wc);
+    p(23, 11, 3, 1, wcD); p(24, 13, 4, 1, wcD); p(26, 15, 4, 1, wcD);
+    p(28, 17, 3, 1, wcD); p(26, 19, 3, 1, wcD);
+  }
+  if (o.cape) {
+    p(7, 15, 18, 14, "#5e1822");
+    p(8, 16, 16, 12, "#a8323f");
+    p(9, 17, 14, 10, "#c2434f");
+    p(13, 15, 6, 2, "#f6c945");
+  }
+  p(9, 3, 14, 13, OL);
+  p(8, 5, 1, 9, OL);
+  p(23, 5, 1, 9, OL);
+  p(10, 15, 12, 10, OL);
+  p(8, 16, 3, 9, OL);
+  p(21, 16, 3, 9, OL);
+  if (kneel) {
+    p(15, 21, 6, 4, OL); p(18, 24, 4, 9, OL);
+    p(10, 22, 6, 5, OL); p(9, 26, 5, 5, OL);
+    p(5, 30, 6, 2, OL);
+  } else {
+    p(12, 23, 4, 7, OL);
+    p(16, 23, 4, 7, OL);
+  }
+  p(10, 4, 12, 11, SKIN);
+  p(9, 6, 1, 7, SKIN);
+  p(22, 6, 1, 7, SKIN);
+  p(13, 15, 6, 1, SKIN_D);
+  p(11, 16, 10, 8, SKIN);
+  p(9, 17, 2, 6, SKIN);
+  p(22, 17, 2, 6, SKIN);
+  p(8, 10, 1, 3, SKIN_D);
+  p(23, 10, 1, 3, SKIN_D);
+  if (kneel) {
+    p(19, 28, 3, 3, SKIN);
+  } else {
+    p(13, 24, 2, 4, SKIN);
+    p(18, 24, 2, 4, SKIN);
+  }
+  if (kneel) {
+    if (legc) {
+      p(15, 21, 6, 4, legc); p(18, 24, 4, 5, legc);
+      p(10, 22, 6, 4, legc); p(9, 26, 5, 4, legc);
+    }
+    p(18, 31, 8, 2, shoe);
+    p(4, 30, 5, 2, shoe);
+  } else {
+    if (o.shorts) {
+      p(12, 22, 3, 3, o.shorts);
+      p(17, 22, 3, 3, o.shorts);
+    } else if (o.pants) {
+      p(12, 23, 3, 5, o.pants);
+      p(17, 23, 3, 5, o.pants);
+    }
+    p(12, 28, 4, 2, shoe);
+    p(16, 28, 4, 2, shoe);
+  }
+  if (o.style === "none") {
+    p(12, 21, 8, 3, "#e2e6ef");
+  } else if (o.style === "tee") {
+    p(11, 16, 10, 6, o.c);
+    p(9, 16, 2, 3, o.c);
+    p(22, 16, 2, 3, o.c);
+    p(11, 21, 10, 1, o.c2);
+  } else if (o.style === "shirt") {
+    p(11, 16, 10, 8, "#eef1f7");
+    p(9, 16, 2, 6, "#eef1f7");
+    p(22, 16, 2, 6, "#e3e7f0");
+    p(15, 16, 1, 8, "#c7cede");
+  } else if (o.style === "sweater") {
+    p(11, 15, 10, 9, o.c);
+    p(9, 16, 2, 7, o.c);
+    p(22, 16, 2, 7, o.c2);
+    p(13, 15, 4, 1, o.c2);
+    p(11, 19, 10, 1, o.c2);
+  } else if (o.style === "jacket") {
+    p(12, 16, 8, 8, "#e7eaf2");
+    p(15, 16, 1, 8, "#c7cede");
+    p(11, 16, 3, 8, o.c);
+    p(18, 16, 3, 8, o.c);
+    p(9, 16, 2, 7, o.c);
+    p(22, 16, 2, 7, o.c2);
+    p(12, 16, 2, 3, o.c2);
+    p(18, 16, 2, 3, o.c2);
+  } else if (o.style === "suit") {
+    p(11, 16, 10, 8, "#23252e");
+    p(9, 16, 2, 7, "#23252e");
+    p(22, 16, 2, 7, "#1a1c22");
+    p(14, 16, 4, 8, "#eef1f7");
+    p(12, 16, 2, 3, "#15161c");
+    p(18, 16, 2, 3, "#15161c");
+  } else if (o.style === "armor") {
+    var pl = o.plate || "#c2c8d4";
+    var plD = o.plateD || "#9198a6";
+    p(11, 16, 10, 8, pl);
+    p(9, 16, 2, 7, pl);
+    p(22, 16, 2, 7, plD);
+    p(11, 16, 10, 1, "#eef1f6");
+    p(9, 15, 3, 3, plD);
+    p(21, 15, 3, 3, plD);
+    p(15, 17, 2, 7, plD);
+    p(11, 20, 10, 1, plD);
+    p(13, 22, 6, 2, plD);
+  } else if (o.style === "robe") {
+    var rb = o.robe || "#3c4a86";
+    var rbD = o.robeD || "#2d3a6c";
+    var trim = o.trim || "#e8c860";
+    var rlen = kneel ? 10 : 15;
+    p(10, 15, 12, rlen, rb);
+    if (!kneel) {
+      p(9, 25, 14, 4, rb);
+      p(8, 28, 16, 2, rb);
+    }
+    p(9, 16, 2, 9, rb);
+    p(22, 16, 3, 9, rbD);
+    p(20, 15, 2, rlen, rbD);
+    p(10, 15, 12, 1, "rgba(255,255,255,0.16)");
+    p(11, 15, 10, 2, trim);
+    p(15, 17, 1, rlen - 3, trim);
+    p(10, 19, 12, 1, rbD);
+    if (!kneel) {
+      p(9, 29, 16, 1, trim);
+      p(11, 30, 4, 1, shoe);
+      p(17, 30, 4, 1, shoe);
+    }
+    if (o.stars) {
+      p(12, 20, 1, 1, "#ffe9a8"); p(18, 22, 1, 1, "#ffffff");
+      p(13, 24, 1, 1, "#ffe9a8"); p(19, 19, 1, 1, "#ffffff");
+      p(11, 23, 1, 1, "#ffe9a8"); p(17, 26, 1, 1, "#ffffff");
+    }
+  } else if (o.style === "coat") {
+    var ct = o.coat || "#cfc3ac";
+    var ctD = o.coatD || "#a99873";
+    p(11, 16, 10, 8, "#eef1f7");
+    p(9, 16, 2, 7, ct);
+    p(22, 16, 2, 7, ctD);
+    p(11, 16, 2, 8, ct);
+    p(18, 16, 2, 8, ctD);
+    p(11, 16, 10, 1, "rgba(255,255,255,0.14)");
+    if (o.knot) p(15, 17, 2, 3, o.knot);
+  }
+  if (o.tie) p(15, 17, 2, 5, o.tie);
+  if (o.staff) {
+    p(23, 9, 1, 21, "#6b4a2f");
+    p(23, 9, 1, 10, "#7d5941");
+    p(22, 7, 3, 3, o.gem || "#8fd0ff");
+    p(22, 6, 3, 1, "#e7f5ff");
+  }
+  if (!o.helm) {
+    p(9, 3, 14, 3, "#6b4a2f");
+    p(9, 4, 1, 4, "#6b4a2f");
+    p(22, 4, 1, 4, "#6b4a2f");
+    p(8, 5, 1, 3, "#6b4a2f");
+    p(23, 5, 1, 3, "#6b4a2f");
+    p(9, 5, 3, 2, "#6b4a2f");
+    p(20, 5, 3, 2, "#6b4a2f");
+    p(11, 3, 10, 1, "#7d5941");
+    p(12, 9, 2, 3, "#2a2320");
+    p(18, 9, 2, 3, "#2a2320");
+    p(12, 9, 1, 1, "#ffffff");
+    p(18, 9, 1, 1, "#ffffff");
+    if (tier >= 7) {
+      p(14, 13, 4, 1, "#a85f48");
+      p(15, 14, 2, 1, "#a85f48");
+    } else {
+      p(15, 13, 2, 1, "#a85f48");
+    }
+  }
+  if (o.helm) {
+    p(9, 3, 14, 11, "#b7bcc7");
+    p(9, 3, 14, 2, "#d2d6de");
+    p(8, 5, 1, 7, "#9298a4");
+    p(23, 5, 1, 7, "#9298a4");
+    p(10, 9, 5, 2, "#181b22");
+    p(17, 9, 5, 2, "#181b22");
+    p(15, 6, 2, 8, "#8b909c");
+    p(11, 2, 10, 2, "#e7c65e");
+    p(15, 0, 2, 3, "#e7c65e");
+  }
+  if (o.wizhat) {
+    var hc = o.hatC || "#3a3f6b";
+    p(6, 4, 20, 2, hc);
+    p(9, 2, 14, 2, hc);
+    p(12, 0, 8, 2, hc);
+    p(14, 0, 4, 1, "#fff1b8");
+    p(6, 4, 20, 1, o.hatBand || "#e8c860");
+    if (o.stars) {
+      p(11, 2, 1, 1, "#ffe9a8");
+      p(19, 1, 1, 1, "#ffffff");
+    }
+  }
+  if (o.hat) {
+    p(7, 4, 18, 2, "#1b1d24");
+    p(9, 0, 14, 4, "#23252e");
+    p(9, 3, 14, 1, "#3a3d47");
+  }
+  if (o.crown) {
+    p(9, 1, 14, 3, "#f6c945");
+    p(9, 0, 2, 2, "#f6c945");
+    p(15, 0, 2, 2, "#f6c945");
+    p(21, 0, 2, 2, "#f6c945");
+    p(15, 1, 2, 2, "#4f7cff");
+    p(11, 0, 1, 1, "#fff1b8");
+  }
+}
+
+var ROOM = {
+  pot: "#7a5a45", potD: "#5f452f", plant: "#5a8a5f", plantD: "#436a48",
+  rug: "#b1673f",
+  frame: "#8a6a45", frameD: "#6b4f34", sky: "#b9d3e0",
+  shelf: "#8a6a45", shelfD: "#6b4f34", book1: "#7c5b8a", book2: "#3f7d6e", cup: "#cfc3ac",
+  glow: "#ffe6a2"
+};
+
+function drawRoomProps(ctx, tier, S) {
+  function p(x, y, w, h, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(x * S, y * S, w * S, h * S);
+  }
+  if (tier >= 5) {
+    ctx.save();
+    ctx.globalAlpha = 0.32;
+    var g = ctx.createRadialGradient(27 * S, 6 * S, 1 * S, 27 * S, 6 * S, 11 * S);
+    g.addColorStop(0, ROOM.glow);
+    g.addColorStop(1, hexA(ROOM.glow, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 32 * S, 32 * S);
+    ctx.restore();
+  }
+  if (tier >= 3) {
+    p(24, 2, 7, 7, ROOM.frameD);
+    p(25, 3, 5, 5, ROOM.sky);
+    p(27, 3, 1, 5, ROOM.frame);
+    p(25, 5, 5, 1, ROOM.frame);
+  }
+  if (tier >= 4) {
+    p(2, 3, 8, 1, ROOM.shelfD);
+    p(2, 4, 8, 1, ROOM.shelf);
+    p(3, 0, 2, 3, ROOM.book1);
+    p(5, 1, 2, 2, ROOM.book2);
+    p(8, 1, 1, 2, ROOM.cup);
+  }
+  if (tier >= 2) {
+    p(7, 29, 18, 2, ROOM.rug);
+    p(7, 29, 18, 1, "rgba(255,255,255,0.12)");
+  }
+  if (tier >= 1) {
+    p(3, 27, 4, 3, ROOM.pot);
+    p(3, 29, 4, 1, ROOM.potD);
+    p(4, 22, 1, 5, ROOM.plantD);
+    p(3, 20, 3, 3, ROOM.plant);
+    p(5, 21, 2, 2, ROOM.plantD);
+  }
+}
+
+/* ============================================================
+   그리드 채우기
+   ============================================================ */
+
+var S = 6;
+
+function makeCell(day, name, drawFn) {
+  var cell = document.createElement("div");
+  cell.className = "cell";
+  var canvas = document.createElement("canvas");
+  canvas.width = 32 * S;
+  canvas.height = 32 * S;
+  var ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  drawFn(ctx);
+  var dayEl = document.createElement("div");
+  dayEl.className = "day";
+  dayEl.textContent = "Day " + day;
+  var nameEl = document.createElement("div");
+  nameEl.className = "name";
+  nameEl.textContent = name;
+  cell.appendChild(canvas);
+  cell.appendChild(dayEl);
+  cell.appendChild(nameEl);
+  return cell;
+}
+
+var outfitGrid = document.getElementById("outfitGrid");
+for (var day = 1; day <= 25; day++) {
+  (function (d) {
+    outfitGrid.appendChild(makeCell(d, OUTFITS[d].name, function (ctx) {
+      drawCharacter(ctx, d, S, "stand");
+    }));
+  })(day);
+}
+
+var roomGrid = document.getElementById("roomGrid");
+var roomLabels = ["기준(소품 없음)", "화분", "+ 러그", "+ 창문", "+ 선반", "+ 조명"];
+for (var rt = 0; rt <= 5; rt++) {
+  (function (t) {
+    roomGrid.appendChild(makeCell(25 + t, roomLabels[t], function (ctx) {
+      if (t > 0) drawRoomProps(ctx, t, S);
+      drawCharacter(ctx, 25, S, "stand");
+    }));
+  })(rt);
+}
+</script>
+</body>
+</html>

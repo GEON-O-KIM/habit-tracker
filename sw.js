@@ -1,6 +1,6 @@
 // 오프라인 캐시용 서비스워커
 // 파일을 수정하면 아래 버전을 올려서 캐시를 갱신하세요.
-var CACHE = "habit-tracker-v27";
+var CACHE = "habit-tracker-v28";
 var ASSETS = [
   "./",
   "./index.html",
@@ -36,6 +36,11 @@ self.addEventListener("activate", function (e) {
 
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
+  if (e.request.url.indexOf("mockup.html") !== -1) {
+    // 확인용 목업 페이지는 캐시하지 않고 항상 최신을 받는다
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(function (cached) {
       if (cached) return cached;
