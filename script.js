@@ -115,10 +115,16 @@
     { name: "별을 두른 마도사", style: "robe", robe: "#242a63", robeD: "#1b2050", staff: true, wizhat: true, hatC: "#1b2050", stars: true, gem: "#ffd98a" },
     { name: "날개 돋은 사도", style: "robe", robe: "#eef1f7", robeD: "#d6dbe6", trim: "#c3cad8", wings: true },
     { name: "빛을 두른 자", style: "robe", robe: "#f4efe0", robeD: "#ddd3ba", trim: "#d8c48a", wings: true, glow: "#ffe6a2" },
-    { name: "전설이 된 자", style: "armor", plate: "#efd27a", plateD: "#c9a13e", pants: "#23252e", cape: true, crown: true, wings: true, wingColor: "#fff4d6", glow: "#fff0c0" }
+    { name: "전설이 된 자", style: "armor", plate: "#efd27a", plateD: "#c9a13e", pants: "#23252e", cape: true, crown: true, wings: true, wingColor: "#fff4d6", glow: "#fff0c0" },
+    { name: "가벼운 니트 카디건", style: "sweater", c: "#8ba888", c2: "#6f8c6c", pants: "#4a4438" },
+    { name: "손에 익은 리넨 셔츠", style: "shirt", pants: "#8c7a5a" },
+    { name: "즐겨 입는 옷", style: "tee", c: "#a3785a", c2: "#82593f" },
+    { name: "데일리 자켓", style: "jacket", c: "#5b6270", c2: "#454b56", pants: "#2f3646" },
+    { name: "단정한 코트", style: "coat", coat: "#cfc3ac", coatD: "#a99873", pants: "#3b3f47", knot: "#8a6a45" }
   ];
   var MAX_TIER = OUTFITS.length - 1;
-  var OUTFIT_DAYS = 20; // 연속 20일까지 매일 옷 한 단계
+  var OUTFIT_DAYS = 25; // 연속 25일까지 매일 옷 한 단계
+  var ROOM_DAYS = 5; // 옷이 다 갖춰진 뒤 5일은 방(배경)이 채워진다
 
   function tierForDay(dayNum) {
     return Math.max(0, Math.min(dayNum, MAX_TIER));
@@ -300,6 +306,16 @@
         p(13, 24, 1, 1, "#ffe9a8"); p(19, 19, 1, 1, "#ffffff");
         p(11, 23, 1, 1, "#ffe9a8"); p(17, 26, 1, 1, "#ffffff");
       }
+    } else if (o.style === "coat") {
+      var ct = o.coat || "#cfc3ac";
+      var ctD = o.coatD || "#a99873";
+      p(11, 16, 10, 8, "#eef1f7");
+      p(9, 16, 2, 7, ct);
+      p(22, 16, 2, 7, ctD);
+      p(11, 16, 2, 8, ct);
+      p(18, 16, 2, 8, ctD);
+      p(11, 16, 10, 1, "rgba(255,255,255,0.14)");
+      if (o.knot) p(15, 17, 2, 3, o.knot);
     }
     if (o.tie) p(15, 17, 2, 5, o.tie);
 
@@ -369,14 +385,69 @@
     }
   }
 
-  function charCanvas(tier, S) {
+  function charCanvas(tier, S, roomTier) {
     var c = document.createElement("canvas");
     c.width = 32 * S;
     c.height = 32 * S;
     var ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
+    if (roomTier) drawRoomProps(ctx, roomTier, S);
     drawCharacter(ctx, Math.min(tier, MAX_TIER), S, "stand");
     return c;
+  }
+
+  /* ============================================================
+     방(배경) — 옷이 다 갖춰진 뒤 5일, 소품이 하루 하나씩 쌓인다
+     ============================================================ */
+
+  var ROOM = {
+    pot: "#7a5a45", potD: "#5f452f", plant: "#5a8a5f", plantD: "#436a48",
+    rug: "#b1673f",
+    frame: "#8a6a45", frameD: "#6b4f34", sky: "#b9d3e0",
+    shelf: "#8a6a45", shelfD: "#6b4f34", book1: "#7c5b8a", book2: "#3f7d6e", cup: "#cfc3ac",
+    glow: "#ffe6a2"
+  };
+
+  // tier 1~5: 화분 → 러그 → 창문 → 선반 → 조명. 뒤쪽 소품(벽)부터, 앞쪽(바닥)은 나중에 그려 캐릭터 앞에 오게 한다.
+  function drawRoomProps(ctx, tier, S) {
+    function p(x, y, w, h, c) {
+      ctx.fillStyle = c;
+      ctx.fillRect(x * S, y * S, w * S, h * S);
+    }
+    if (tier >= 5) {
+      ctx.save();
+      ctx.globalAlpha = 0.32;
+      var g = ctx.createRadialGradient(27 * S, 6 * S, 1 * S, 27 * S, 6 * S, 11 * S);
+      g.addColorStop(0, ROOM.glow);
+      g.addColorStop(1, hexA(ROOM.glow, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 32 * S, 32 * S);
+      ctx.restore();
+    }
+    if (tier >= 3) {
+      p(24, 2, 7, 7, ROOM.frameD);
+      p(25, 3, 5, 5, ROOM.sky);
+      p(27, 3, 1, 5, ROOM.frame);
+      p(25, 5, 5, 1, ROOM.frame);
+    }
+    if (tier >= 4) {
+      p(2, 3, 8, 1, ROOM.shelfD);
+      p(2, 4, 8, 1, ROOM.shelf);
+      p(3, 0, 2, 3, ROOM.book1);
+      p(5, 1, 2, 2, ROOM.book2);
+      p(8, 1, 1, 2, ROOM.cup);
+    }
+    if (tier >= 2) {
+      p(7, 29, 18, 2, ROOM.rug);
+      p(7, 29, 18, 1, "rgba(255,255,255,0.12)");
+    }
+    if (tier >= 1) {
+      p(3, 27, 4, 3, ROOM.pot);
+      p(3, 29, 4, 1, ROOM.potD);
+      p(4, 22, 1, 5, ROOM.plantD);
+      p(3, 20, 3, 3, ROOM.plant);
+      p(5, 21, 2, 2, ROOM.plantD);
+    }
   }
 
   /* ============================================================
@@ -969,6 +1040,7 @@
     var percent = Math.min(100, Math.round((dayNum / habit.goalDays) * 100));
     var tier = tierForDay(dayNum);       // 옷 = 연속일
     var blocked = habit.resistCount;     // 오늘 방패로 막은 충동 수
+    var roomTier = dayNum > OUTFIT_DAYS ? Math.min(dayNum - OUTFIT_DAYS, ROOM_DAYS) : 0;
 
     var card = document.createElement("div");
     card.className = "habit";
@@ -1071,7 +1143,7 @@
     colChar.appendChild(charCap);
     var stage = document.createElement("div");
     stage.className = "box box--stage";
-    stage.appendChild(charCanvas(tier, 8));
+    stage.appendChild(charCanvas(tier, 8, roomTier));
     colChar.appendChild(stage);
     var charLabel = document.createElement("div");
     charLabel.className = "reward__label";
@@ -1079,9 +1151,13 @@
     colChar.appendChild(charLabel);
     var charHint = document.createElement("div");
     charHint.className = "reward__hint";
-    charHint.textContent = dayNum >= OUTFIT_DAYS
-      ? "20벌 완성"
-      : "매일 한 벌씩 (" + Math.min(dayNum, OUTFIT_DAYS) + " / " + OUTFIT_DAYS + ")";
+    if (dayNum >= OUTFIT_DAYS + ROOM_DAYS) {
+      charHint.textContent = "옷 " + OUTFIT_DAYS + "벌, 방 완성";
+    } else if (dayNum >= OUTFIT_DAYS) {
+      charHint.textContent = "옷은 다 갖췄어요 · 방 채우는 중 (" + roomTier + " / " + ROOM_DAYS + ")";
+    } else {
+      charHint.textContent = "매일 한 벌씩 (" + dayNum + " / " + OUTFIT_DAYS + ")";
+    }
     colChar.appendChild(charHint);
     reward.appendChild(colChar);
 
